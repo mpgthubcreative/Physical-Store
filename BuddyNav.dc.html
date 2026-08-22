@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+</helmet>
+
+<sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+<nav style="height:60px;background:#FFFFFF;border-bottom:1px solid #E4EEEA;display:flex;align-items:center;justify-content:space-between;padding:0 18px;box-sizing:border-box;font-family:'Nunito Sans',sans-serif;">
+  <button style="width:34px;height:34px;display:flex;flex-direction:column;justify-content:center;gap:5px;border:none;background:transparent;cursor:pointer;padding:0;">
+    <span style="height:2.5px;background:#2C4A4A;border-radius:2px;"></span>
+    <span style="height:2.5px;background:#2C4A4A;border-radius:2px;"></span>
+    <span style="height:2.5px;background:#2C4A4A;border-radius:2px;"></span>
+  </button>
+  <img src="./assets/buddy-logo.jpg" alt="Buddy Patches" style="height:42px;border-radius:9px;" />
+  <div style="display:flex;align-items:center;gap:6px;position:relative;">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2C4A4A" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line></svg>
+    <div style="position:relative;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2C4A4A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h12l-1 12.5H7z"></path><path d="M9 8.5V6a3 3 0 0 1 6 0v2.5"></path></svg>
+      <span style="position:absolute;top:-6px;right:-7px;background:#F16861;color:#fff;font:700 10px 'Nunito Sans';min-width:16px;height:16px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 3px;box-sizing:border-box;">{{ cartCount }}</span>
+    </div>
+  </div>
+</nav>
+</sc-if>
+
+<sc-if value="{{ isDesktop }}" hint-placeholder-val="{{ true }}">
+<div>
+  <div style="height:38px;background:#F16861;color:#fff;display:flex;align-items:center;justify-content:center;font:600 13px 'Nunito Sans',sans-serif;letter-spacing:.02em;">✦ Free nationwide shipping on orders over ₱1,500 — design yours today! ✦</div>
+  <nav style="height:80px;background:#FFFFFF;border-bottom:1px solid #E4EEEA;display:flex;align-items:center;font-family:'Nunito Sans',sans-serif;">
+    <div style="width:1400px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;">
+      <img src="./assets/buddy-logo.jpg" alt="Buddy Patches" style="height:58px;border-radius:12px;" />
+      <div style="display:flex;align-items:center;gap:38px;font:600 16px 'Quicksand',sans-serif;">
+        <a href="#" style="color:{{ homeColor }};text-decoration:none;padding-bottom:3px;border-bottom:2.5px solid {{ homeUl }};">Home</a>
+        <a href="#" style="color:{{ catColor }};text-decoration:none;padding-bottom:3px;border-bottom:2.5px solid {{ catUl }};">Shop</a>
+        <a href="#" style="color:{{ evtColor }};text-decoration:none;padding-bottom:3px;border-bottom:2.5px solid {{ evtUl }};">Events</a>
+        <a href="#" style="color:{{ aboColor }};text-decoration:none;padding-bottom:3px;border-bottom:2.5px solid {{ aboUl }};">About</a>
+        <a href="#" style="color:{{ conColor }};text-decoration:none;padding-bottom:3px;border-bottom:2.5px solid {{ conUl }};">Contact</a>
+      </div>
+      <div style="display:flex;align-items:center;gap:22px;">
+        <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#2C4A4A" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line></svg>
+        <a href="#" style="color:#2C4A4A;text-decoration:none;font:600 15px 'Nunito Sans';">Log in</a>
+        <div style="position:relative;cursor:pointer;">
+          <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="#2C4A4A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h12l-1 12.5H7z"></path><path d="M9 8.5V6a3 3 0 0 1 6 0v2.5"></path></svg>
+          <span style="position:absolute;top:-7px;right:-8px;background:#F16861;color:#fff;font:700 11px 'Nunito Sans';min-width:17px;height:17px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 4px;box-sizing:border-box;">{{ cartCount }}</span>
+        </div>
+      </div>
+    </div>
+  </nav>
+</div>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1400,&quot;height&quot;:120},&quot;active&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;home&quot;,&quot;shop&quot;,&quot;events&quot;,&quot;about&quot;,&quot;contact&quot;],&quot;default&quot;:&quot;home&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;mobile&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;cartCount&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:0,&quot;tsType&quot;:&quot;number&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const active = this.props.active || 'home';
+    const mobile = this.props.mobile === true || this.props.mobile === 'true';
+    const teal = '#38B2B3', coral = '#F16861', ink = '#2C4A4A', clear = 'transparent';
+    const col = (k) => active === k ? coral : ink;
+    const shopKey = 'shop';
+    const ul = (k) => active === k ? coral : clear;
+    return {
+      isMobile: mobile, isDesktop: !mobile,
+      cartCount: this.props.cartCount != null ? this.props.cartCount : 0,
+      homeColor: col('home'), catColor: col(shopKey), evtColor: col('events'), conColor: col('contact'),
+      homeUl: ul('home'), catUl: ul(shopKey), evtUl: ul('events'), conUl: ul('contact'),
+      aboColor: col('about'), aboUl: ul('about'),
+    };
+  }
+}
+</script>
+</body>
+</html>

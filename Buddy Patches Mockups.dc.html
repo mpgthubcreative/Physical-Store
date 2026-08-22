@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="./image-slot.js"></script>
+<style>
+  body{margin:0;background:#E7EFEC;font-family:'Nunito Sans',sans-serif;}
+  a{color:#38B2B3;} a:hover{color:#F16861;}
+  .frame-cap{font:700 14px 'Nunito Sans';color:#5A7370;letter-spacing:.04em;text-transform:uppercase;}
+  .browser-bar{height:34px;background:#BFDED8;display:flex;align-items:center;gap:7px;padding:0 14px;box-sizing:border-box;}
+  .bdot{width:11px;height:11px;border-radius:50%;}
+  .url-pill{flex:1;height:20px;background:#fff;border-radius:10px;margin-left:8px;display:flex;align-items:center;padding:0 12px;font:600 11px 'Nunito Sans';color:#5A7370;}
+  .btn-coral{background:#F16861;color:#fff;border:none;border-radius:12px;font:700 16px 'Quicksand',sans-serif;cursor:pointer;}
+  .card-title{font:700 18px 'Quicksand',sans-serif;color:#2C4A4A;margin:0;}
+  .price{font:600 15px 'Nunito Sans';color:#5A7370;}
+  .sec-h{font:700 34px 'Quicksand',sans-serif;color:#2C4A4A;margin:0;}
+</style>
+</helmet>
+
+<div style="padding:44px 56px 90px;">
+
+  <div style="margin:0 auto 46px;max-width:1400px;">
+    <div style="display:flex;align-items:center;gap:16px;">
+      <img src="./assets/buddy-logo.jpg" alt="Buddy Patches" style="height:70px;border-radius:14px;" />
+      <div>
+        <h1 style="font:700 30px 'Quicksand',sans-serif;color:#2C4A4A;margin:0;">Buddy Patches — Website Mockups</h1>
+        <p style="margin:4px 0 0;font-size:15px;color:#5A7370;">Desktop 1920 · content 1400 &nbsp;|&nbsp; Mobile 428 · content 390 &nbsp;|&nbsp; Home · Catalog · Events · Product (live viewer) · Contact</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== HOME ===================== -->
+  <div style="margin-bottom:88px;">
+    <div class="frame-cap" style="margin-bottom:14px;">01 · Home</div>
+    <div style="display:flex;gap:56px;align-items:flex-start;">
+
+      <!-- HOME DESKTOP -->
+      <div style="width:1920px;border-radius:18px;overflow:hidden;box-shadow:0 24px 60px rgba(44,74,74,.18);background:#fff;flex:none;">
+        <div class="browser-bar"><span class="bdot" style="background:#F16861;"></span><span class="bdot" style="background:#38B2B3;"></span><span class="bdot" style="background:#BFDED8;"></span><span class="url-pill">buddypatches.ph</span></div>
+        <dc-import name="BuddyNav" active="home" mobile="{{ false }}" cart-count="{{ cartCount }}" hint-size="100%,120px"></dc-import>
+        <!-- hero -->
+        <div style="position:relative;height:750px;background:#BFDED8;">
+          <image-slot id="home-hero" shape="rect" placeholder="Hero lifestyle photo (patches + pouch)"></image-slot>
+          <div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(44,74,74,.42) 0%,rgba(44,74,74,.05) 60%);pointer-events:none;"></div>
+          <div style="position:absolute;top:0;bottom:0;left:0;width:1400px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;justify-content:center;pointer-events:none;">
+            <div style="max-width:560px;">
+              <span style="display:inline-block;background:#F16861;color:#fff;font:700 13px 'Nunito Sans';padding:6px 14px;border-radius:20px;letter-spacing:.05em;">MIX · MATCH · STICK</span>
+              <h2 style="font:700 66px/1.05 'Quicksand',sans-serif;color:#fff;margin:18px 0 16px;">Your story, one patch at a time.</h2>
+              <p style="font-size:19px;color:#F2FAF8;margin:0 0 30px;max-width:440px;">Build your own pouch, bag tag, pencil case & more — then load it up with patches that are all you.</p>
+              <button class="btn-coral" style="padding:16px 38px;font-size:18px;pointer-events:auto;">Design Now</button>
+            </div>
+          </div>
+        </div>
+        <!-- featured -->
+        <div style="width:1400px;margin:0 auto;padding:70px 0 40px;">
+          <div style="text-align:center;margin-bottom:44px;">
+            <h3 class="sec-h">Featured products</h3>
+            <p style="font-size:17px;color:#5A7370;margin:10px 0 0;">Choose your base &amp; personalize!</p>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:26px;">
+            <sc-for list="{{ products }}" as="item" hint-placeholder-count="5">
+              <div style="background:#fff;border:1.5px solid #E4EEEA;border-radius:18px;overflow:hidden;transition:transform .2s;" style-hover="transform:translateY(-6px);box-shadow:0 16px 34px rgba(44,74,74,.14);">
+                <div style="position:relative;aspect-ratio:1;background:#F4F8F6;">
+                  <image-slot id="home-{{ item.id }}" shape="rect" placeholder="{{ item.name }}"></image-slot>
+                  <sc-if value="{{ item.badge }}" hint-placeholder-val="">
+                    <span style="position:absolute;top:12px;left:12px;background:#F16861;color:#fff;font:700 11px 'Nunito Sans';padding:5px 11px;border-radius:14px;letter-spacing:.04em;">{{ item.badge }}</span>
+                  </sc-if>
+                </div>
+                <div style="padding:18px 18px 22px;text-align:center;">
+                  <h4 class="card-title" style="font-size:19px;margin-bottom:7px;">{{ item.name }}</h4>
+                  <div class="price">{{ item.price }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <!-- how it works -->
+        <div style="background:#F4F8F6;margin-top:40px;">
+          <div style="width:1400px;margin:0 auto;padding:64px 0;display:grid;grid-template-columns:repeat(3,1fr);gap:40px;">
+            <sc-for list="{{ steps }}" as="s" hint-placeholder-count="3">
+              <div style="text-align:center;">
+                <div style="width:78px;height:78px;border-radius:50%;background:#38B2B3;color:#fff;font:700 32px 'Quicksand',sans-serif;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;">{{ s.n }}</div>
+                <h4 style="font:700 22px 'Quicksand',sans-serif;color:#2C4A4A;margin:0 0 8px;">{{ s.t }}</h4>
+                <p style="font-size:15px;color:#5A7370;margin:0;max-width:280px;margin-left:auto;margin-right:auto;">{{ s.d }}</p>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <dc-import name="BuddyFooter" mobile="{{ false }}" show-newsletter="{{ true }}" hint-size="100%,300px"></dc-import>
+      </div>
+
+      <!-- HOME MOBILE -->
+      <div style="width:428px;border-radius:34px;overflow:hidden;box-shadow:0 24px 60px rgba(44,74,74,.18);background:#fff;border:2px solid #D6E4E0;flex:none;">
+        <div style="height:32px;background:#fff;display:flex;align-items:center;justify-content:center;position:relative;"><div style="width:120px;height:20px;background:#2C4A4A;border-radius:0 0 16px 16px;"></div></div>
+        <dc-import name="BuddyNav" active="home" mobile="{{ true }}" cart-count="{{ cartCount }}" hint-size="100%,60px"></dc-import>
+        <div style="position:relative;height:360px;background:#BFDED8;">
+          <image-slot id="homem-hero" shape="rect" placeholder="Hero photo"></image-slot>
+          <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(44,74,74,.15),rgba(44,74,74,.55));pointer-events:none;"></div>
+          <div style="position:absolute;left:19px;right:19px;bottom:26px;pointer-events:none;">
+            <h2 style="font:700 32px/1.08 'Quicksand',sans-serif;color:#fff;margin:0 0 14px;">Your story, one patch at a time.</h2>
+            <button class="btn-coral" style="padding:13px 26px;font-size:16px;pointer-events:auto;">Design Now</button>
+          </div>
+        </div>
+        <div style="width:390px;margin:0 auto;padding:30px 0 10px;">
+          <h3 style="font:700 24px 'Quicksand',sans-serif;color:#2C4A4A;text-align:center;margin:0 0 4px;">Featured products</h3>
+          <p style="font-size:14px;color:#5A7370;text-align:center;margin:0 0 22px;">Choose your base &amp; personalize!</p>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;">
+            <sc-for list="{{ products }}" as="item" hint-placeholder-count="5">
+              <div style="background:#fff;border:1.5px solid #E4EEEA;border-radius:16px;overflow:hidden;">
+                <div style="position:relative;aspect-ratio:1;background:#F4F8F6;">
+                  <image-slot id="homem-{{ item.id }}" shape="rect" placeholder="{{ item.name }}"></image-slot>
+                  <sc-if value="{{ item.badge }}" hint-placeholder-val="">
+                    <span style="position:absolute;top:9px;left:9px;background:#F16861;color:#fff;font:700 9px 'Nunito Sans';padding:4px 8px;border-radius:12px;">{{ item.badge }}</span>
+                  </sc-if>
+                </div>
+                <div style="padding:12px 10px 15px;text-align:center;">
+                  <h4 class="card-title" style="font-size:15px;margin-bottom:4px;">{{ item.name }}</h4>
+                  <div class="price" style="font-size:13px;">{{ item.price }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <dc-import name="BuddyFooter" mobile="{{ true }}" show-newsletter="{{ true }}" hint-size="100%,340px"></dc-import>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===================== CATALOG ===================== -->
+  <div style="margin-bottom:88px;">
+    <div class="frame-cap" style="margin-bottom:14px;">02 · Catalog</div>
+    <div style="display:flex;gap:56px;align-items:flex-start;">
+
+      <!-- CATALOG DESKTOP -->
+      <div style="width:1920px;border-radius:18px;overflow:hidden;box-shadow:0 24px 60px rgba(44,74,74,.18);background:#fff;flex:none;">
+        <div class="browser-bar"><span class="bdot" style="background:#F16861;"></span><span class="bdot" style="background:#38B2B3;"></span><span class="bdot" style="background:#BFDED8;"></span><span class="url-pill">buddypatches.ph/collections/all</span></div>
+        <dc-import name="BuddyNav" active="shop" mobile="{{ false }}" cart-count="{{ cartCount }}" hint-size="100%,120px"></dc-import>
+        <div style="width:1400px;margin:0 auto;padding:48px 0 70px;">
+          <p style="font-size:14px;color:#9BB0AC;margin:0 0 6px;">Home / Collections</p>
+          <h2 class="sec-h" style="margin-bottom:28px;">Collection: Products</h2>
+          <div style="display:flex;gap:44px;align-items:flex-start;">
+            <!-- filter sidebar -->
+            <div style="width:250px;flex:none;">
+              <div style="border:1.5px solid #E4EEEA;border-radius:16px;padding:22px 20px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;"><span style="font:700 17px 'Quicksand';color:#2C4A4A;">Filter</span><a href="#" style="font-size:13px;text-decoration:none;">Reset</a></div>
+                <div style="font:700 14px 'Nunito Sans';color:#2C4A4A;margin-bottom:12px;">Availability</div>
+                <label style="display:flex;align-items:center;gap:10px;font-size:14px;color:#5A7370;margin-bottom:9px;cursor:pointer;"><span style="width:18px;height:18px;border:2px solid #BFDED8;border-radius:5px;display:inline-block;"></span>In stock (6)</label>
+                <label style="display:flex;align-items:center;gap:10px;font-size:14px;color:#5A7370;margin-bottom:20px;cursor:pointer;"><span style="width:18px;height:18px;border:2px solid #BFDED8;border-radius:5px;display:inline-block;"></span>Out of stock (1)</label>
+                <div style="height:1px;background:#E4EEEA;margin:6px 0 18px;"></div>
+                <div style="font:700 14px 'Nunito Sans';color:#2C4A4A;margin-bottom:12px;">Price</div>
+                <p style="font-size:12.5px;color:#9BB0AC;margin:0 0 12px;">Highest price is ₱790.00</p>
+                <div style="display:flex;gap:10px;">
+                  <div style="flex:1;border:2px solid #E4EEEA;border-radius:9px;padding:8px 10px;font-size:13px;color:#9BB0AC;">₱ From</div>
+                  <div style="flex:1;border:2px solid #E4EEEA;border-radius:9px;padding:8px 10px;font-size:13px;color:#9BB0AC;">₱ To</div>
+                </div>
+              </div>
+            </div>
+            <!-- grid -->
+            <div style="flex:1;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;">
+                <span style="font-size:15px;color:#5A7370;">6 products</span>
+                <div style="display:flex;align-items:center;gap:10px;"><span style="font-size:14px;color:#5A7370;">Sort by:</span><div style="border:2px solid #E4EEEA;border-radius:10px;padding:9px 16px;font:600 14px 'Nunito Sans';color:#2C4A4A;display:flex;align-items:center;gap:22px;">Featured <span style="color:#9BB0AC;">▾</span></div></div>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:26px;">
+                <sc-for list="{{ catalog }}" as="item" hint-placeholder-count="6">
+                  <div style="background:#fff;border:1.5px solid #E4EEEA;border-radius:18px;overflow:hidden;" style-hover="box-shadow:0 16px 34px rgba(44,74,74,.14);">
+                    <div style="position:relative;aspect-ratio:1;background:#F4F8F6;">
+                      <image-slot id="cat-{{ item.id }}" shape="rect" placeholder="{{ item.name }}"></image-slot>
+                      <sc-if value="{{ item.badge }}" hint-placeholder-val="">
+                        <span style="position:absolute;top:12px;left:12px;background:#F16861;color:#fff;font:700 11px 'Nunito Sans';padding:5px 11px;border-radius:14px;">{{ item.badge }}</span>
+                      </sc-if>
+                    </div>
+                    <div style="padding:18px;text-align:center;">
+                      <h4 class="card-title" style="font-size:19px;margin-bottom:7px;">{{ item.name }}</h4>
+                      <div class="price">{{ item.price }}</div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </div>
+        <dc-import name="BuddyFooter" mobile="{{ false }}" hint-size="100%,260px"></dc-import>
+      </div>
+
+      <!-- CATALOG MOBILE -->
+      <div style="width:428px;border-radius:34px;overflow:hidden;box-shadow:0 24px 60px rgba(44,74,74,.18);background:#fff;border:2px solid #D6E4E0;flex:none;">
+        <div style="height:32px;background:#fff;display:flex;align-items:center;justify-content:center;"><div style="width:120px;height:20px;background:#2C4A4A;border-radius:0 0 16px 16px;"></div></div>
+        <dc-import name="BuddyNav" active="shop" mobile="{{ true }}" cart-count="{{ cartCount }}" hint-size="100%,60px"></dc-import>
+        <div style="width:390px;margin:0 auto;padding:24px 0 20px;">
+          <h2 style="font:700 26px 'Quicksand',sans-serif;color:#2C4A4A;margin:0 0 16px;">Products</h2>
+          <div style="display:flex;gap:10px;margin-bottom:20px;">
+            <div style="flex:1;border:2px solid #E4EEEA;border-radius:10px;padding:10px;text-align:center;font:600 13px 'Nunito Sans';color:#2C4A4A;">Filter ⚲</div>
+            <div style="flex:1;border:2px solid #E4EEEA;border-radius:10px;padding:10px;text-align:center;font:600 13px 'Nunito Sans';color:#2C4A4A;">Sort ▾</div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;">
+            <sc-for list="{{ catalog }}" as="item" hint-placeholder-count="6">
+              <div style="background:#fff;border:1.5px solid #E4EEEA;border-radius:16px;overflow:hidden;">
+                <div style="position:relative;aspect-ratio:1;background:#F4F8F6;">
+                  <image-slot id="catm-{{ item.id }}" shape="rect" placeholder="{{ item.name }}"></image-slot>
+                </div>
+                <div style="padding:12px 10px 15px;text-align:center;">
+                  <h4 class="card-title" style="font-size:15px;margin-bottom:4px;">{{ item.name }}</h4>
+                  <div class="price" style="font-size:13px;">{{ item.price }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <dc-import name="BuddyFooter" mobile="{{ true }}" hint-size="100%,300px"></dc-import>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<div style="padding:0 56px 90px;">
+
+  <!-- ===================== EVENTS ===================== -->
+  <div style="margin-bottom:88px;">
+    <div class="frame-cap" style="margin-bottom:14px;">03 · Events &amp; Parties</div>
+    <div style="display:flex;gap:56px;align-items:flex-start;">
+
+      <!-- EVENTS DESKTOP -->
+      <div style="width:1920px;border-radius:18px;overflow:hidden;box-shadow:0 24px 60px rgba(44,74,74,.18);background:#fff;flex:none;">
+        <div class="browser-bar"><span class="bdot" style="background:#F16861;"></span><span class="bdot" style="background:#38B2B3;"></span><span class="bdot" style="background:#BFDED8;"></span><span class="url-pill">buddypatches.ph/pages/events</span></div>
+        <dc-import name="BuddyNav" active="events" mobile="{{ false }}" cart-count="{{ cartCount }}" hint-size="100%,120px"></dc-import>
+        <div style="position:relative;height:750px;background:#38B2B3;">
+          <image-slot id="events-hero" shape="rect" placeholder="Live customization booth photo"></image-slot>
+          <div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(44,74,74,.55),rgba(44,74,74,.1));pointer-events:none;"></div>
+          <div style="position:absolute;top:0;bottom:0;left:50%;transform:translateX(-50%);width:1400px;display:flex;flex-direction:column;justify-content:center;pointer-events:none;">
+            <div style="max-width:620px;">
+              <h2 style="font:700 52px/1.08 'Quicksand',sans-serif;color:#fff;margin:0 0 16px;">Live Tote &amp; Patch Booths for Weddings, Birthdays &amp; Corporate Events</h2>
+              <p style="font-size:19px;color:#F2FAF8;margin:0 0 28px;">A unique souvenir experience your guests will enjoy and remember.</p>
+              <button class="btn-coral" style="padding:16px 38px;font-size:18px;pointer-events:auto;">Get a Quote</button>
+            </div>
+          </div>
+        </div>
+        <div style="width:1400px;margin:0 auto;padding:56px 0 20px;display:grid;grid-template-columns:repeat(3,1fr);gap:24px;">
+          <div style="aspect-ratio:1;border-radius:16px;overflow:hidden;background:#F4F8F6;"><image-slot id="events-g1" shape="rect" placeholder="Event photo 1"></image-slot></div>
+          <div style="aspect-ratio:1;border-radius:16px;overflow:hidden;background:#F4F8F6;"><image-slot id="events-g2" shape="rect" placeholder="Event photo 2"></image-slot></div>
+          <div style="aspect-ratio:1;border-radius:16px;overflow:hidden;background:#F4F8F6;"><image-slot id="events-g3" shape="rect" placeholder="Event photo 3"></image-slot></div>
+        </div>
+        <div style="background:#F4F8F6;margin-top:52px;">
+          <div style="width:1400px;margin:0 auto;padding:60px 0;display:grid;grid-template-columns:1fr 1fr;gap:70px;align-items:center;">
+            <div>
+              <h3 class="sec-h" style="margin-bottom:14px;">Book Your Event</h3>
+              <p style="font-size:16px;color:#5A7370;margin:0 0 14px;">Planning a wedding, birthday, or corporate event? Send us your details and our team will get back to you shortly.</p>
+              <a href="#" style="font:700 16px 'Nunito Sans';">View Full Event Packages &amp; Rates →</a>
+            </div>
+            <div style="background:#fff;border:1.5px solid #E4EEEA;border-radius:18px;padding:30px;">
+              <div style="display:flex;gap:16px;margin-bottom:16px;">
+                <div style="flex:1;"><label style="font:600 13px 'Nunito Sans';color:#5A7370;">Name</label><div style="margin-top:6px;height:44px;border:2px solid #E4EEEA;border-radius:10px;"></div></div>
+                <div style="flex:1;"><label style="font:600 13px 'Nunito Sans';color:#5A7370;">Email *</label><div style="margin-top:6px;height:44px;border:2px solid #E4EEEA;border-radius:10px;"></div></div>
+              </div>
+              <div style="margin-bottom:16px;"><label style="font:600 13px 'Nunito Sans';color:#5A7370;">Phone number</label><div style="margin-top:6px;height:44px;border:2px solid #E4EEEA;border-radius:10px;"></div></div>
+              <div style="margin-bottom:20px;"><label style="font:600 13px 'Nunito Sans';color:#5A7370;">Comment</label><div style="margin-top:6px;height:96px;border:2px solid #E4EEEA;border-radius:10px;"></div></div>
+              <button class="btn-coral" style="width:100%;padding:15px;font-size:17px;">Send</button>
+            </div>
+          </div>
+        </div>
+        <dc-import name="BuddyFooter" mobile="{{ false }}" hint-size="100%,260px"></dc-import>
+      </div>
+
+      <!-- EVENTS MOBILE -->
+      <div style="width:428px;border-radius:34px;overflow:hidden;box-shadow:0 24px 60px rgba(44,74,74,.18);background:#fff;border:2px solid #D6E4E0;flex:none;">
+        <div style="height:32px;background:#fff;display:flex;align-items:center;justify-content:center;"><div style="width:120px;height:20px;background:#2C4A4A;border-radius:0 0 16px 16px;"></div></div>
+        <dc-import name="BuddyNav" active="events" mobile="{{ true }}" cart-count="{{ cartCount }}" hint-size="100%,60px"></dc-import>
+        <div style="position:relative;height:300px;background:#38B2B3;">
+          <image-slot id="eventsm-hero" shape="rect" placeholder="Booth photo"></image-slot>
+          <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(44,74,74,.2),rgba(44,74,74,.62));pointer-events:none;"></div>
+          <div style="position:absolute;left:19px;right:19px;bottom:22px;pointer-events:none;">
+            <h2 style="font:700 26px/1.1 'Quicksand',sans-serif;color:#fff;margin:0 0 12px;">Live booths for your event</h2>
+            <button class="btn-coral" style="padding:12px 24px;font-size:15px;pointer-events:auto;">Get a Quote</button>
+          </div>
+        </div>
+        <div style="width:390px;margin:0 auto;padding:26px 0 10px;">
+          <div style="background:#F4F8F6;border-radius:16px;padding:20px;margin-top:24px;">
+            <h3 style="font:700 20px 'Quicksand';color:#2C4A4A;margin:0 0 14px;">Book Your Event</h3>
+            <div style="height:42px;border:2px solid #E4EEEA;border-radius:10px;background:#fff;margin-bottom:10px;"></div>
+            <div style="height:42px;border:2px solid #E4EEEA;border-radius:10px;background:#fff;margin-bottom:10px;"></div>
+            <div style="height:80px;border:2px solid #E4EEEA;border-radius:10px;background:#fff;margin-bottom:14px;"></div>
+            <button class="btn-coral" style="width:100%;padding:13px;font-size:16px;">Send</button>
+          </div>
+        </div>
+        <dc-import name="BuddyFooter" mobile="{{ true }}" hint-size="100%,300px"></dc-import>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===================== PRODUCT (LIVE VIEWER) ===================== -->
+  <div style="margin-bottom:88px;">
+    <div class="frame-cap" style="margin-bottom:14px;">04 · Product — Live Viewer</div>
+    <div style="display:flex;gap:56px;align-items:flex-start;">
+
+      <!-- PRODUCT DESKTOP -->
+      <div style="width:1920px;border-radius:18px;overflow:hidden;box-shadow:0 24px 60px rgba(44,74,74,.18);background:#fff;flex:none;">
+        <div class="browser-bar"><span class="bdot" style="background:#F16861;"></span><span class="bdot" style="background:#38B2B3;"></span><span class="bdot" style="background:#BFDED8;"></span><span class="url-pill">buddypatches.ph/products/everyday-pouch</span></div>
+        <dc-import name="BuddyNav" active="" mobile="{{ false }}" cart-count="{{ cartCount }}" hint-size="100%,120px"></dc-import>
+        <div style="width:1400px;margin:0 auto;padding:36px 0 70px;">
+          <p style="font-size:14px;color:#9BB0AC;margin:0 0 22px;">Home / Products / Everyday Pouch</p>
+          <div style="display:flex;gap:56px;align-items:flex-start;">
+            <!-- STAGE -->
+            <div style="width:600px;flex:none;">
+              <div style="position:relative;width:600px;height:600px;border-radius:22px;background:#F4F8F6;overflow:hidden;border:1.5px solid #E4EEEA;">
+                <sc-for list="{{ colorStages }}" as="c" hint-placeholder-count="1">
+                  <div style="position:absolute;inset:0;display:{{ c.show }};"><image-slot id="stage-{{ c.id }}" shape="rect" placeholder="Everyday Pouch — {{ c.name }}"></image-slot></div>
+                </sc-for>
+                <!-- applied patches -->
+                <sc-for list="{{ appliedObjs }}" as="p" hint-placeholder-count="0">
+                  <div style="position:absolute;top:{{ p.top }};left:{{ p.left }};width:96px;height:96px;border-radius:16px;background:{{ p.hex }};border:3px dashed rgba(255,255,255,.9);box-shadow:0 6px 16px rgba(44,74,74,.22);display:flex;align-items:center;justify-content:center;transform:rotate(-6deg);">
+                    <span style="font:700 13px 'Quicksand';color:#2C4A4A;text-align:center;">{{ p.name }}</span>
+                  </div>
+                </sc-for>
+                <!-- name overlay -->
+                <sc-if value="{{ showName }}" hint-placeholder-val="">
+                  <div style="position:absolute;left:0;right:0;bottom:52px;text-align:center;pointer-events:none;">
+                    <span style="display:inline-block;background:rgba(255,255,255,.86);border-radius:12px;padding:8px 22px;font:700 34px 'Quicksand',sans-serif;color:#2C4A4A;box-shadow:0 4px 14px rgba(44,74,74,.15);">{{ pname }}</span>
+                  </div>
+                </sc-if>
+                <!-- zoom button -->
+                <button onClick="{{ openZoom }}" style="position:absolute;top:16px;right:16px;width:46px;height:46px;border-radius:50%;background:#fff;border:1.5px solid #E4EEEA;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(44,74,74,.14);">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2C4A4A" stroke-width="2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"></circle><line x1="15.5" y1="15.5" x2="20" y2="20"></line><line x1="10.5" y1="7.5" x2="10.5" y2="13.5"></line><line x1="7.5" y1="10.5" x2="13.5" y2="10.5"></line></svg>
+                </button>
+                <span style="position:absolute;bottom:14px;left:16px;font:600 12px 'Nunito Sans';color:#9BB0AC;background:rgba(255,255,255,.8);padding:4px 10px;border-radius:10px;">Live preview</span>
+              </div>
+              <!-- swatch row under stage -->
+              <div style="display:flex;gap:12px;margin-top:20px;">
+                <sc-for list="{{ swatchList }}" as="c" hint-placeholder-count="6">
+                  <button onClick="{{ c.pick }}" title="{{ c.name }}" style="width:54px;height:54px;border-radius:14px;background:{{ c.hex }};border:{{ c.rw }} solid {{ c.ring }};cursor:pointer;padding:0;box-shadow:0 2px 6px rgba(44,74,74,.12);"></button>
+                </sc-for>
+              </div>
+            </div>
+            <!-- INFO -->
+            <div style="flex:1;">
+              <h1 style="font:700 40px 'Quicksand',sans-serif;color:#2C4A4A;margin:0 0 6px;">Everyday Pouch</h1>
+              <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:6px;">
+                <span style="font:700 30px 'Quicksand';color:#F16861;">{{ priceStr }}</span>
+              </div>
+              <p style="font-size:14px;color:#9BB0AC;margin:0 0 26px;min-height:18px;">{{ addonNote }}</p>
+
+              <div style="font:700 15px 'Nunito Sans';color:#2C4A4A;margin-bottom:12px;">Color: <span style="color:#5A7370;">{{ colorName }}</span></div>
+              <div style="display:flex;gap:12px;margin-bottom:26px;">
+                <sc-for list="{{ swatchList }}" as="c" hint-placeholder-count="6">
+                  <button onClick="{{ c.pick }}" title="{{ c.name }}" style="width:46px;height:46px;border-radius:12px;background:{{ c.hex }};border:{{ c.rw }} solid {{ c.ring }};cursor:pointer;padding:0;"></button>
+                </sc-for>
+              </div>
+
+              <div style="margin-bottom:26px;">
+                <label style="font:700 15px 'Nunito Sans';color:#2C4A4A;display:block;margin-bottom:8px;">Add a name <span style="color:#9BB0AC;font-weight:600;">(optional · +₱30 · max 10)</span></label>
+                <input value="{{ pname }}" onInput="{{ onName }}" placeholder="e.g. Maya" maxlength="10" style="width:280px;border:2px solid #E4EEEA;border-radius:12px;padding:12px 16px;font:600 16px 'Nunito Sans';color:#2C4A4A;outline:none;" style-focus="border-color:#38B2B3;" />
+              </div>
+
+              <div style="margin-bottom:28px;">
+                <label style="font:700 15px 'Nunito Sans';color:#2C4A4A;display:block;margin-bottom:12px;">Add patches <span style="color:#9BB0AC;font-weight:600;">(+₱40 each · up to 6)</span></label>
+                <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;max-width:520px;">
+                  <sc-for list="{{ patchChips }}" as="p" hint-placeholder-count="8">
+                    <button onClick="{{ p.toggle }}" style="display:flex;align-items:center;gap:9px;background:{{ p.bg }};border:2px solid {{ p.ring }};border-radius:12px;padding:9px 10px;cursor:pointer;">
+                      <span style="width:26px;height:26px;flex:none;border-radius:7px;background:{{ p.hex }};border:2px dashed rgba(255,255,255,.85);"></span>
+                      <span style="font:600 14px 'Nunito Sans';color:#2C4A4A;">{{ p.name }}</span>
+                    </button>
+                  </sc-for>
+                </div>
+              </div>
+
+              <div style="display:flex;align-items:center;gap:18px;margin-bottom:24px;">
+                <div style="display:flex;align-items:center;border:2px solid #E4EEEA;border-radius:12px;overflow:hidden;">
+                  <button onClick="{{ dec }}" style="width:48px;height:50px;border:none;background:#fff;font-size:22px;color:#2C4A4A;cursor:pointer;">−</button>
+                  <span style="width:52px;text-align:center;font:700 17px 'Nunito Sans';color:#2C4A4A;">{{ qty }}</span>
+                  <button onClick="{{ inc }}" style="width:48px;height:50px;border:none;background:#fff;font-size:22px;color:#2C4A4A;cursor:pointer;">+</button>
+                </div>
+                <button onClick="{{ addToCart }}" class="btn-coral" style="flex:1;padding:16px;font-size:18px;">Add to cart · {{ priceStr }}</button>
+              </div>
+
+              <div style="border-top:1px solid #E4EEEA;padding-top:22px;">
+                <p style="font-size:15px;color:#5A7370;line-height:1.7;margin:0;">Sturdy canvas everyday pouch, handmade to order. Load it up with iron-on patches and add a name to make it fully yours — previewed live above. Ships nationwide in 1–2 working days.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div style="background:#F4F8F6;">
+          <div style="width:1400px;margin:0 auto;padding:64px 0 70px;">
+            <h3 class="sec-h" style="text-align:center;margin-bottom:40px;">You May Also Like</h3>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:26px;">
+              <sc-for list="{{ alsoLike }}" as="item" hint-placeholder-count="4">
+                <div style="background:#fff;border:1.5px solid #E4EEEA;border-radius:18px;overflow:hidden;" style-hover="box-shadow:0 16px 34px rgba(44,74,74,.14);">
+                  <div style="position:relative;aspect-ratio:1;background:#F4F8F6;">
+                    <image-slot id="also-{{ item.id }}" shape="rect" placeholder="{{ item.name }}"></image-slot>
+                    <sc-if value="{{ item.badge }}" hint-placeholder-val="">
+                      <span style="position:absolute;top:12px;left:12px;background:#F16861;color:#fff;font:700 11px 'Nunito Sans';padding:5px 11px;border-radius:14px;">{{ item.badge }}</span>
+                    </sc-if>
+                  </div>
+                  <div style="padding:18px;text-align:center;">
+                    <h4 class="card-title" style="font-size:19px;margin-bottom:7px;">{{ item.name }}</h4>
+                    <div class="price">{{ item.price }}</div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+        <dc-import name="BuddyFooter" mobile="{{ false }}" hint-size="100%,260px"></dc-import>
+      </div>
+
+      <!-- PRODUCT MOBILE -->
+      <div style="width:428px;border-radius:34px;overflow:hidden;box-shadow:0 24px 60px rgba(44,74,74,.18);background:#fff;border:2px solid #D6E4E0;flex:none;">
+        <div style="height:32px;background:#fff;display:flex;align-items:center;justify-content:center;"><div style="width:120px;height:20px;background:#2C4A4A;border-radius:0 0 16px 16px;"></div></div>
+        <dc-import name="BuddyNav" active="" mobile="{{ true }}" cart-count="{{ cartCount }}" hint-size="100%,60px"></dc-import>
+        <div style="width:390px;margin:0 auto;padding:18px 0 24px;">
+          <div style="position:relative;width:390px;height:390px;border-radius:20px;background:#F4F8F6;overflow:hidden;border:1.5px solid #E4EEEA;">
+            <sc-for list="{{ colorStages }}" as="c" hint-placeholder-count="1">
+              <div style="position:absolute;inset:0;display:{{ c.show }};"><image-slot id="stagem-{{ c.id }}" shape="rect" placeholder="Pouch — {{ c.name }}"></image-slot></div>
+            </sc-for>
+            <sc-for list="{{ appliedObjs }}" as="p" hint-placeholder-count="0">
+              <div style="position:absolute;top:{{ p.top }};left:{{ p.left }};width:62px;height:62px;border-radius:12px;background:{{ p.hex }};border:2.5px dashed rgba(255,255,255,.9);box-shadow:0 4px 10px rgba(44,74,74,.2);display:flex;align-items:center;justify-content:center;transform:rotate(-6deg);"><span style="font:700 9px 'Quicksand';color:#2C4A4A;">{{ p.name }}</span></div>
+            </sc-for>
+            <sc-if value="{{ showName }}" hint-placeholder-val="">
+              <div style="position:absolute;left:0;right:0;bottom:34px;text-align:center;"><span style="display:inline-block;background:rgba(255,255,255,.86);border-radius:9px;padding:5px 14px;font:700 22px 'Quicksand';color:#2C4A4A;">{{ pname }}</span></div>
+            </sc-if>
+            <button onClick="{{ openZoom }}" style="position:absolute;top:12px;right:12px;width:38px;height:38px;border-radius:50%;background:#fff;border:1.5px solid #E4EEEA;cursor:pointer;display:flex;align-items:center;justify-content:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2C4A4A" stroke-width="2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"></circle><line x1="15.5" y1="15.5" x2="20" y2="20"></line></svg></button>
+          </div>
+          <div style="display:flex;gap:9px;margin-top:14px;">
+            <sc-for list="{{ swatchList }}" as="c" hint-placeholder-count="6">
+              <button onClick="{{ c.pick }}" style="width:42px;height:42px;border-radius:11px;background:{{ c.hex }};border:{{ c.rw }} solid {{ c.ring }};cursor:pointer;padding:0;"></button>
+            </sc-for>
+          </div>
+          <h1 style="font:700 28px 'Quicksand';color:#2C4A4A;margin:18px 0 4px;">Everyday Pouch</h1>
+          <div style="font:700 24px 'Quicksand';color:#F16861;margin-bottom:2px;">{{ priceStr }}</div>
+          <p style="font-size:12.5px;color:#9BB0AC;margin:0 0 18px;min-height:16px;">{{ addonNote }}</p>
+          <label style="font:700 14px 'Nunito Sans';color:#2C4A4A;display:block;margin-bottom:7px;">Add a name <span style="color:#9BB0AC;">(+₱30)</span></label>
+          <input value="{{ pname }}" onInput="{{ onName }}" placeholder="e.g. Maya" maxlength="10" style="width:100%;box-sizing:border-box;border:2px solid #E4EEEA;border-radius:11px;padding:11px 14px;font:600 15px 'Nunito Sans';color:#2C4A4A;outline:none;margin-bottom:20px;" />
+          <label style="font:700 14px 'Nunito Sans';color:#2C4A4A;display:block;margin-bottom:10px;">Add patches <span style="color:#9BB0AC;">(+₱40 each)</span></label>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:22px;">
+            <sc-for list="{{ patchChips }}" as="p" hint-placeholder-count="8">
+              <button onClick="{{ p.toggle }}" style="display:flex;flex-direction:column;align-items:center;gap:5px;background:{{ p.bg }};border:2px solid {{ p.ring }};border-radius:11px;padding:9px 4px;cursor:pointer;">
+                <span style="width:24px;height:24px;border-radius:6px;background:{{ p.hex }};border:2px dashed rgba(255,255,255,.85);"></span>
+                <span style="font:600 10px 'Nunito Sans';color:#2C4A4A;">{{ p.name }}</span>
+              </button>
+            </sc-for>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div style="display:flex;align-items:center;border:2px solid #E4EEEA;border-radius:11px;overflow:hidden;">
+              <button onClick="{{ dec }}" style="width:40px;height:46px;border:none;background:#fff;font-size:20px;color:#2C4A4A;cursor:pointer;">−</button>
+              <span style="width:40px;text-align:center;font:700 16px 'Nunito Sans';color:#2C4A4A;">{{ qty }}</span>
+              <button onClick="{{ inc }}" style="width:40px;height:46px;border:none;background:#fff;font-size:20px;color:#2C4A4A;cursor:pointer;">+</button>
+            </div>
+            <button onClick="{{ addToCart }}" class="btn-coral" style="flex:1;padding:14px;font-size:15px;">Add to cart</button>
+          </div>
+        </div>
+        
+        <div style="background:#F4F8F6;padding:26px 0 30px;">
+          <div style="width:390px;margin:0 auto;">
+            <h3 style="font:700 22px 'Quicksand';color:#2C4A4A;text-align:center;margin:0 0 20px;">You May Also Like</h3>
+            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;">
+              <sc-for list="{{ alsoLike }}" as="item" hint-placeholder-count="4">
+                <div style="background:#fff;border:1.5px solid #E4EEEA;border-radius:16px;overflow:hidden;">
+                  <div style="position:relative;aspect-ratio:1;background:#F4F8F6;">
+                    <image-slot id="alsom-{{ item.id }}" shape="rect" placeholder="{{ item.name }}"></image-slot>
+                  </div>
+                  <div style="padding:12px 10px 15px;text-align:center;">
+                    <h4 class="card-title" style="font-size:15px;margin-bottom:4px;">{{ item.name }}</h4>
+                    <div class="price" style="font-size:13px;">{{ item.price }}</div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+        <dc-import name="BuddyFooter" mobile="{{ true }}" hint-size="100%,300px"></dc-import>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===================== CONTACT ===================== -->
+  <div style="margin-bottom:40px;">
+    <div class="frame-cap" style="margin-bottom:14px;">05 · Contact</div>
+    <div style="display:flex;gap:56px;align-items:flex-start;">
+
+      <!-- CONTACT DESKTOP -->
+      <div style="width:1920px;border-radius:18px;overflow:hidden;box-shadow:0 24px 60px rgba(44,74,74,.18);background:#fff;flex:none;">
+        <div class="browser-bar"><span class="bdot" style="background:#F16861;"></span><span class="bdot" style="background:#38B2B3;"></span><span class="bdot" style="background:#BFDED8;"></span><span class="url-pill">buddypatches.ph/pages/contact</span></div>
+        <dc-import name="BuddyNav" active="contact" mobile="{{ false }}" cart-count="{{ cartCount }}" hint-size="100%,120px"></dc-import>
+        <div style="width:1400px;margin:0 auto;padding:56px 0 80px;">
+          <h2 class="sec-h" style="margin-bottom:8px;">Get in touch</h2>
+          <p style="font-size:17px;color:#5A7370;margin:0 0 40px;">Questions about an order, a custom patch, or a bulk request? We'd love to hear from you.</p>
+          <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:64px;align-items:start;">
+            <div style="background:#F4F8F6;border-radius:18px;padding:34px;">
+              <div style="display:flex;gap:16px;margin-bottom:18px;">
+                <div style="flex:1;"><label style="font:600 13px 'Nunito Sans';color:#5A7370;">Name</label><div style="margin-top:6px;height:46px;border:2px solid #E4EEEA;border-radius:10px;background:#fff;"></div></div>
+                <div style="flex:1;"><label style="font:600 13px 'Nunito Sans';color:#5A7370;">Email</label><div style="margin-top:6px;height:46px;border:2px solid #E4EEEA;border-radius:10px;background:#fff;"></div></div>
+              </div>
+              <div style="margin-bottom:22px;"><label style="font:600 13px 'Nunito Sans';color:#5A7370;">Message</label><div style="margin-top:6px;height:150px;border:2px solid #E4EEEA;border-radius:10px;background:#fff;"></div></div>
+              <button class="btn-coral" style="padding:15px 44px;font-size:17px;">Send message</button>
+            </div>
+            <div>
+              <div style="margin-bottom:26px;"><div style="font:700 16px 'Quicksand';color:#2C4A4A;margin-bottom:4px;">Email</div><div style="font-size:15px;color:#5A7370;">hello@buddypatches.ph</div></div>
+              <div style="margin-bottom:26px;"><div style="font:700 16px 'Quicksand';color:#2C4A4A;margin-bottom:4px;">Studio hours</div><div style="font-size:15px;color:#5A7370;">Mon–Sat · 9:00 AM – 6:00 PM</div></div>
+              <div style="margin-bottom:26px;"><div style="font:700 16px 'Quicksand';color:#2C4A4A;margin-bottom:4px;">Location</div><div style="font-size:15px;color:#5A7370;">Metro Manila, Philippines<br/>Nationwide shipping</div></div>
+              <div style="display:flex;gap:10px;"><span style="width:40px;height:40px;border-radius:50%;background:#38B2B3;"></span><span style="width:40px;height:40px;border-radius:50%;background:#F16861;"></span><span style="width:40px;height:40px;border-radius:50%;background:#BFDED8;"></span></div>
+            </div>
+          </div>
+        </div>
+        <dc-import name="BuddyFooter" mobile="{{ false }}" hint-size="100%,260px"></dc-import>
+      </div>
+
+      <!-- CONTACT MOBILE -->
+      <div style="width:428px;border-radius:34px;overflow:hidden;box-shadow:0 24px 60px rgba(44,74,74,.18);background:#fff;border:2px solid #D6E4E0;flex:none;">
+        <div style="height:32px;background:#fff;display:flex;align-items:center;justify-content:center;"><div style="width:120px;height:20px;background:#2C4A4A;border-radius:0 0 16px 16px;"></div></div>
+        <dc-import name="BuddyNav" active="contact" mobile="{{ true }}" cart-count="{{ cartCount }}" hint-size="100%,60px"></dc-import>
+        <div style="width:390px;margin:0 auto;padding:26px 0 24px;">
+          <h2 style="font:700 26px 'Quicksand';color:#2C4A4A;margin:0 0 6px;">Get in touch</h2>
+          <p style="font-size:14px;color:#5A7370;margin:0 0 24px;">Questions about an order or a custom patch? Message us.</p>
+          <div style="background:#F4F8F6;border-radius:16px;padding:20px;margin-bottom:24px;">
+            <div style="height:44px;border:2px solid #E4EEEA;border-radius:10px;background:#fff;margin-bottom:12px;"></div>
+            <div style="height:44px;border:2px solid #E4EEEA;border-radius:10px;background:#fff;margin-bottom:12px;"></div>
+            <div style="height:110px;border:2px solid #E4EEEA;border-radius:10px;background:#fff;margin-bottom:16px;"></div>
+            <button class="btn-coral" style="width:100%;padding:13px;font-size:16px;">Send message</button>
+          </div>
+          <div style="font:700 15px 'Quicksand';color:#2C4A4A;margin-bottom:3px;">hello@buddypatches.ph</div>
+          <div style="font-size:14px;color:#5A7370;">Mon–Sat · 9AM–6PM · Metro Manila</div>
+        </div>
+        <dc-import name="BuddyFooter" mobile="{{ true }}" hint-size="100%,300px"></dc-import>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- ===================== ZOOM MODAL ===================== -->
+<sc-if value="{{ zoomOpen }}" hint-placeholder-val="">
+  <div onClick="{{ closeZoom }}" style="position:fixed;inset:0;background:rgba(44,74,74,.72);z-index:60;display:flex;align-items:center;justify-content:center;padding:40px;">
+    <div style="position:relative;width:min(760px,90vw);height:min(760px,90vw);border-radius:24px;background:#F4F8F6;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.4);">
+      <image-slot id="zoom-{{ stageColorId }}" shape="rect" placeholder="Everyday Pouch — {{ colorName }} (zoomed)"></image-slot>
+      <sc-for list="{{ appliedObjs }}" as="p" hint-placeholder-count="0">
+        <div style="position:absolute;top:{{ p.top }};left:{{ p.left }};width:120px;height:120px;border-radius:18px;background:{{ p.hex }};border:4px dashed rgba(255,255,255,.9);box-shadow:0 8px 20px rgba(44,74,74,.24);display:flex;align-items:center;justify-content:center;transform:rotate(-6deg);"><span style="font:700 16px 'Quicksand';color:#2C4A4A;">{{ p.name }}</span></div>
+      </sc-for>
+      <sc-if value="{{ showName }}" hint-placeholder-val="">
+        <div style="position:absolute;left:0;right:0;bottom:64px;text-align:center;"><span style="display:inline-block;background:rgba(255,255,255,.88);border-radius:14px;padding:10px 28px;font:700 44px 'Quicksand';color:#2C4A4A;">{{ pname }}</span></div>
+      </sc-if>
+      <button onClick="{{ closeZoom }}" style="position:absolute;top:16px;right:16px;width:44px;height:44px;border-radius:50%;background:#fff;border:none;cursor:pointer;font-size:22px;color:#2C4A4A;box-shadow:0 4px 12px rgba(0,0,0,.2);">×</button>
+    </div>
+  </div>
+</sc-if>
+
+<!-- ===================== CART DRAWER ===================== -->
+<sc-if value="{{ cartOpen }}" hint-placeholder-val="">
+  <div style="position:fixed;inset:0;z-index:70;">
+    <div onClick="{{ closeCart }}" style="position:absolute;inset:0;background:rgba(44,74,74,.5);"></div>
+    <div style="position:absolute;top:0;right:0;bottom:0;width:420px;max-width:92vw;background:#fff;box-shadow:-12px 0 40px rgba(44,74,74,.25);display:flex;flex-direction:column;font-family:'Nunito Sans',sans-serif;">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:22px 24px;border-bottom:1px solid #E4EEEA;">
+        <span style="font:700 22px 'Quicksand';color:#2C4A4A;">Your cart</span>
+        <button onClick="{{ closeCart }}" style="width:36px;height:36px;border:none;background:#F4F8F6;border-radius:50%;font-size:20px;color:#2C4A4A;cursor:pointer;">×</button>
+      </div>
+      <div style="flex:1;overflow:auto;padding:16px 24px;">
+        <sc-if value="{{ cartEmpty }}" hint-placeholder-val="{{ true }}">
+          <div style="text-align:center;color:#9BB0AC;padding:60px 0;font-size:15px;">Your cart is empty.<br/>Design a pouch to get started!</div>
+        </sc-if>
+        <sc-for list="{{ cart }}" as="it" hint-placeholder-count="0">
+          <div style="display:flex;gap:14px;padding:16px 0;border-bottom:1px solid #F0F5F3;">
+            <div style="width:66px;height:66px;flex:none;border-radius:12px;background:#BFDED8;"></div>
+            <div style="flex:1;">
+              <div style="font:700 16px 'Quicksand';color:#2C4A4A;">{{ it.name }}</div>
+              <div style="font-size:13px;color:#9BB0AC;margin:3px 0 6px;">{{ it.sub }}</div>
+              <button onClick="{{ it.remove }}" style="border:none;background:none;color:#F16861;font:600 13px 'Nunito Sans';cursor:pointer;padding:0;">Remove</button>
+            </div>
+            <div style="font:700 15px 'Nunito Sans';color:#2C4A4A;">{{ it.lineStr }}</div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="padding:20px 24px 26px;border-top:1px solid #E4EEEA;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:16px;"><span style="font:700 17px 'Quicksand';color:#2C4A4A;">Subtotal</span><span style="font:700 17px 'Quicksand';color:#2C4A4A;">{{ subtotalStr }}</span></div>
+        <button class="btn-coral" style="width:100%;padding:16px;font-size:17px;">Check out</button>
+      </div>
+    </div>
+  </div>
+</sc-if></x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1400,&quot;height&quot;:900}}">
+class Component extends DCLogic {
+  state = {
+    colorIdx: 0,
+    pname: '',
+    applied: [],
+    qty: 1,
+    zoomOpen: false,
+    cartOpen: false,
+    cart: [],
+  };
+
+  fmt(n){ return '₱' + Number(n).toLocaleString('en-PH') + '.00'; }
+  colorList(){ return [
+    { id:'teal', name:'Teal', hex:'#38B2B3' },
+    { id:'coral', name:'Coral', hex:'#F16861' },
+    { id:'mint', name:'Mint', hex:'#BFDED8' },
+    { id:'cream', name:'Cream', hex:'#EFE4CC' },
+    { id:'sky', name:'Sky', hex:'#A7D3E8' },
+    { id:'blush', name:'Blush', hex:'#F4C4C0' },
+  ]; }
+  patchList(){ return [
+    { id:'star', name:'Star', hex:'#F6C453' },
+    { id:'heart', name:'Heart', hex:'#F16861' },
+    { id:'rainbow', name:'Rainbow', hex:'#7FB2E5' },
+    { id:'cloud', name:'Cloud', hex:'#BFDED8' },
+    { id:'flower', name:'Flower', hex:'#E88AA6' },
+    { id:'smiley', name:'Smiley', hex:'#F6C453' },
+    { id:'bolt', name:'Bolt', hex:'#38B2B3' },
+    { id:'moon', name:'Moon', hex:'#9B8CD1' },
+  ]; }
+  unit(){ return 260 + (this.state.pname ? 30 : 0) + this.state.applied.length * 40; }
+  setColor(i){ this.setState({ colorIdx: i }); }
+  onName(e){ this.setState({ pname: (e.target.value || '').slice(0,10) }); }
+  togglePatch(id){ this.setState(s => ({ applied: s.applied.includes(id) ? s.applied.filter(x=>x!==id) : (s.applied.length>=6 ? s.applied : [...s.applied, id]) })); }
+  inc(){ this.setState(s => ({ qty: s.qty + 1 })); }
+  dec(){ this.setState(s => ({ qty: Math.max(1, s.qty - 1) })); }
+  addToCart(){ this.setState(s => ({ cart: [...s.cart, { name:'Everyday Pouch', color: this.colorList()[s.colorIdx].name, patches: s.applied.length, qty: s.qty, unit: this.unit() }], cartOpen: true })); }
+  removeItem(i){ this.setState(s => ({ cart: s.cart.filter((_,idx)=>idx!==i) })); }
+
+  renderVals() {
+    const products = [
+      { id: 'pouch', name: 'Everyday Pouch', price: '₱260.00' },
+      { id: 'bagtag', name: 'Bag Tag', price: '₱120.00' },
+      { id: 'pencil', name: 'Pencil Case', price: '₱320.00' },
+      { id: 'coin', name: 'Coin Purse', price: '₱190.00' },
+      { id: 'box', name: 'Patch Box', price: 'From ₱790.00', badge: 'COMBO' },
+    ];
+    const steps = [
+      { n: '1', t: 'Pick your base', d: 'Pouch, bag tag, pencil case, coin purse, or a Patch Box combo.' },
+      { n: '2', t: 'Load your patches', d: 'Drop on patches and add a name — preview it live as you go.' },
+      { n: '3', t: 'We make & ship it', d: 'Handmade to order and shipped nationwide in 1–2 days.' },
+    ];
+    const colors = this.colorList();
+    const patches = this.patchList();
+    const ci = this.state.colorIdx;
+    const sel = colors[ci];
+    const unit = this.unit();
+    const positions = [ {top:'11%',left:'13%'},{top:'15%',left:'63%'},{top:'43%',left:'9%'},{top:'49%',left:'67%'},{top:'70%',left:'24%'},{top:'65%',left:'57%'} ];
+    const appliedObjs = patches.filter(p => this.state.applied.includes(p.id)).slice(0,6).map((p,i)=>({ ...p, top:positions[i].top, left:positions[i].left }));
+    const colorStages = colors.map((c,i)=>({ ...c, show: i===ci ? 'block' : 'none' }));
+    const swatchList = colors.map((c,i)=>({ ...c, ring: i===ci ? '#F16861' : '#E4EEEA', rw: i===ci ? '3px' : '2px', pick: () => this.setColor(i) }));
+    const patchChips = patches.map(p=>({ ...p, on: this.state.applied.includes(p.id), ring: this.state.applied.includes(p.id) ? '#F16861' : '#E4EEEA', bg: this.state.applied.includes(p.id) ? '#FFF1F0' : '#fff', toggle: () => this.togglePatch(p.id) }));
+    const cart = this.state.cart.map((it,i)=>({ ...it, lineStr: this.fmt(it.unit*it.qty), sub: it.color + ' · ' + it.patches + ' patch' + (it.patches===1?'':'es') + ' · ×' + it.qty, remove: () => this.removeItem(i) }));
+    const subtotal = this.state.cart.reduce((a,c)=>a + c.unit*c.qty, 0);
+    return {
+      products,
+      catalog: products.slice(0, 6),
+      alsoLike: [products[1], products[2], products[3], products[4]],
+      steps,
+      cartCount: this.state.cart.reduce((a, c) => a + c.qty, 0),
+      colors, swatchList, colorStages, appliedObjs, patchChips,
+      colorName: sel.name, colorHex: sel.hex, stageColorId: sel.id,
+      pname: this.state.pname, qty: this.state.qty,
+      priceStr: this.fmt(unit), addonNote: (this.state.pname ? '+ ₱30 name ' : '') + (this.state.applied.length ? '+ ₱' + (this.state.applied.length*40) + ' patches' : ''),
+      showName: !!this.state.pname,
+      zoomOpen: this.state.zoomOpen, cartOpen: this.state.cartOpen,
+      cart, cartEmpty: cart.length===0, subtotalStr: this.fmt(subtotal),
+      onName: (e)=>this.onName(e), inc: ()=>this.inc(), dec: ()=>this.dec(),
+      addToCart: ()=>this.addToCart(),
+      openZoom: ()=>this.setState({zoomOpen:true}), closeZoom: ()=>this.setState({zoomOpen:false}),
+      openCart: ()=>this.setState({cartOpen:true}), closeCart: ()=>this.setState({cartOpen:false}),
+    };
+  }
+}
+</script>
+</body>
+</html>

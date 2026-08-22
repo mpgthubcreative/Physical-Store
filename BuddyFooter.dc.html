@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+</helmet>
+
+<footer style="background:#38B2B3;color:#FFFFFF;font-family:'Nunito Sans',sans-serif;padding:{{ pad }};box-sizing:border-box;">
+  <div style="width:{{ inner }};max-width:100%;margin:0 auto;">
+    <sc-if value="{{ showNewsletter }}" hint-placeholder-val="{{ true }}">
+      <div style="text-align:center;max-width:520px;margin:0 auto {{ gap }};">
+        <h3 style="font:700 {{ h }} 'Quicksand',sans-serif;margin:0 0 10px;">Subscribe to our emails</h3>
+        <p style="margin:0 0 18px;font-size:14px;color:#EAF6F4;">Little updates, new patches, and event dates — no spam.</p>
+        <div style="display:flex;gap:0;border:2px solid #BFDED8;border-radius:12px;overflow:hidden;background:#fff;">
+          <input placeholder="Email" style="flex:1;border:none;outline:none;padding:12px 16px;font:400 15px 'Nunito Sans';color:#2C4A4A;background:transparent;" />
+          <button style="border:none;background:#F16861;color:#fff;padding:0 20px;font:700 20px 'Nunito Sans';cursor:pointer;">→</button>
+        </div>
+      </div>
+    </sc-if>
+    <div style="border-top:{{ rule }};padding-top:{{ padTop }};display:flex;flex-direction:column;align-items:center;gap:16px;">
+      <img src="./assets/buddy-logo.jpg" alt="Buddy Patches" style="height:{{ logoH }};border-radius:16px;" />
+      <div style="font-size:13.5px;color:#EAF6F4;text-align:center;">© 2026, Buddy Patches. All Right Reserved.</div>
+    </div>
+  </div>
+</footer>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1400,&quot;height&quot;:300},&quot;mobile&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;showNewsletter&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const mobile = this.props.mobile === true || this.props.mobile === 'true';
+    const news = this.props.showNewsletter === true || this.props.showNewsletter === 'true';
+    return {
+      showNewsletter: news,
+      pad: mobile ? '32px 20px 30px' : '54px 0 40px',
+      inner: mobile ? '390px' : '1400px',
+      gap: mobile ? '30px' : '42px',
+      h: mobile ? '20px' : '24px',
+      rule: news ? '1px solid rgba(255,255,255,.28)' : 'none',
+      padTop: news ? (mobile ? '24px' : '30px') : '0',
+      logoH: mobile ? '72px' : '96px',
+    };
+  }
+}
+</script>
+</body>
+</html>
