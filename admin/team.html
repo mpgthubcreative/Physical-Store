@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Team — Buddy Patches Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="./css/admin.css">
+</head>
+<body>
+
+<div class="admin-shell">
+  <div id="admin-topbar"></div>
+  <main class="admin-main">
+    <div class="admin-page-head">
+      <h1>Team</h1>
+      <button type="button" class="admin-btn" data-new-admin>+ Add admin</button>
+    </div>
+
+    <div class="admin-card" data-admin-form-card hidden>
+      <h2 style="font:700 18px var(--font-heading);color:var(--ink);margin:0 0 16px;">Create Admin account</h2>
+      <form data-admin-form novalidate>
+        <div class="admin-form-grid two-col">
+          <div class="admin-field">
+            <label for="t-email">Email</label>
+            <input id="t-email" name="email" type="email" required maxlength="200" />
+          </div>
+          <div class="admin-field">
+            <label for="t-password">Temporary password <span class="hint">(share it with them directly — they should change it after first sign-in)</span></label>
+            <input id="t-password" name="password" type="text" required minlength="8" maxlength="200" />
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:20px;">
+          <button type="submit" class="admin-btn">Create admin</button>
+          <button type="button" class="admin-btn admin-btn--ghost" data-cancel-form>Cancel</button>
+        </div>
+        <p class="admin-note" data-admin-form-note></p>
+      </form>
+    </div>
+
+    <div class="admin-table-wrap">
+      <table class="admin-table">
+        <thead><tr><th>Email</th><th>Role</th><th>Status</th><th>Date added</th><th></th></tr></thead>
+        <tbody data-team-rows>
+          <tr><td colspan="5" class="admin-empty">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<script type="module" src="./js/team.js"></script>
+</body>
+</html>

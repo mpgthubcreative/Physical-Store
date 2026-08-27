@@ -13,6 +13,11 @@ export async function renderAdminShell(activeKey) {
   const mount = document.getElementById('admin-topbar');
   const email = auth.currentUser ? auth.currentUser.email : '';
 
+  // The Team nav link is never inserted into the DOM at all for a non-Owner
+  // — this is UX only, not the real enforcement. Every Team API independently
+  // calls requireOwner() server-side regardless of what the client sends.
+  const navLinks = claims.role === 'owner' ? [...NAV_LINKS, { key: 'team', label: 'Team', href: 'team.html' }] : NAV_LINKS;
+
   mount.innerHTML = `
     <div class="admin-topbar">
       <div class="admin-topbar__brand">
@@ -20,7 +25,7 @@ export async function renderAdminShell(activeKey) {
         Admin
       </div>
       <nav class="admin-topbar__nav">
-        ${NAV_LINKS.map((l) => `<a href="${l.href}" class="${l.key === activeKey ? 'is-active' : ''}">${l.label}</a>`).join('')}
+        ${navLinks.map((l) => `<a href="${l.href}" class="${l.key === activeKey ? 'is-active' : ''}">${l.label}</a>`).join('')}
       </nav>
       <div class="admin-topbar__user">
         <span>${email} &middot; ${claims.role === 'owner' ? 'Owner' : 'Admin'}</span>

@@ -39,9 +39,9 @@ function requireSession() {
 
 async function getClaims() {
   const user = auth.currentUser;
-  if (!user) return { admin: false, role: null };
+  if (!user) return { admin: false, role: null, uid: null };
   const result = await user.getIdTokenResult();
-  return { admin: result.claims.admin === true, role: result.claims.role || null };
+  return { admin: result.claims.admin === true, role: result.claims.role || null, uid: user.uid };
 }
 
 async function signIn(email, password) {

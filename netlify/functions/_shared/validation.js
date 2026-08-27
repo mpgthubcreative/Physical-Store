@@ -49,6 +49,13 @@ function requireHex(value, fieldName) {
   return s;
 }
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+function requireEmail(value, fieldName = 'Email') {
+  const s = requireString(value, fieldName, { maxLength: 200 });
+  if (!EMAIL_RE.test(s)) throw new ValidationError(`${fieldName} must be a valid email address.`);
+  return s.toLowerCase();
+}
+
 function slugify(input) {
   return String(input)
     .trim()
@@ -88,6 +95,7 @@ module.exports = {
   requireBoolean,
   requirePercent,
   requireHex,
+  requireEmail,
   slugify,
   requireArray,
   requireNoDuplicates,
