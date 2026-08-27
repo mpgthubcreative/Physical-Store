@@ -1,6 +1,8 @@
 import { requireSession, apiFetch } from './admin-auth.js';
 import { renderAdminShell } from './admin-shell.js';
 import { uploadImage, removeImage } from './image-upload.js';
+import { confirmAction, showToast, setButtonBusy } from './admin-ui.js';
+import { escapeHtml } from './admin-format.js';
 
 let claims = null;
 let patches = [];
@@ -15,7 +17,6 @@ const removeImageBtn = document.querySelector('[data-remove-patch-image]');
 const reservedHint = document.querySelector('[data-patch-reserved-hint]');
 const adjustmentReasonField = document.querySelector('[data-patch-adjustment-reason-field]');
 
-let editingPatch = null;
 let originalStockQty = null;
 
 function setNote(text, isError) {
@@ -25,7 +26,6 @@ function setNote(text, isError) {
 
 function openForm(patch) {
   editingId = patch ? patch.id : null;
-  editingPatch = patch || null;
   originalStockQty = patch ? Number(patch.stockQty || 0) : null;
   document.querySelector('[data-form-title]').textContent = patch ? `Edit ${patch.name}` : 'New patch';
   form.reset();
@@ -57,7 +57,6 @@ function openForm(patch) {
 function closeForm() {
   formCard.hidden = true;
   editingId = null;
-  editingPatch = null;
   originalStockQty = null;
 }
 
@@ -69,29 +68,35 @@ form.stockQty.addEventListener('input', () => {
 function renderRows() {
   const tbody = document.querySelector('[data-patch-rows]');
   if (!patches.length) {
-    tbody.innerHTML = '<tr><td colspan="9" class="admin-empty">No patches yet — add your first one.</td></tr>';
+    tbody.innerHTML = `
+      <tr><td colspan="9">
+        <div class="admin-empty-state">
+          <div class="admin-empty-state__title">No patches yet</div>
+          <div class="admin-empty-state__desc">Add your first patch so customers can start customizing.</div>
+        </div>
+      </td></tr>`;
     return;
   }
   tbody.innerHTML = patches
     .map(
       (p) => `
     <tr>
-      <td>${p.imageUrl ? `<img class="admin-thumb" src="${p.imageUrl}" alt="" />` : `<span class="admin-thumb" style="background:${p.hex};"></span>`}</td>
-      <td>${p.name}</td>
-      <td>₱${p.price}</td>
-      <td>${p.stockQty ?? 0}</td>
-      <td>${p.reservedQty ?? 0}</td>
-      <td>${p.displayWidthPct}×${p.displayHeightPct}</td>
-      <td><span class="admin-badge ${p.active ? 'admin-badge--active' : 'admin-badge--inactive'}">${p.active ? 'Active' : 'Archived'}</span></td>
-      <td>&mdash;</td>
-      <td>
+      <td data-role="media">${p.imageUrl ? `<img class="admin-thumb" src="${p.imageUrl}" alt="" />` : `<span class="admin-thumb" style="background:${p.hex};"></span>`}</td>
+      <td data-role="heading"><span class="admin-row-title">${escapeHtml(p.name)}</span></td>
+      <td data-role="meta" data-label="Price">₱${p.price}</td>
+      <td data-role="meta" data-label="Stock">${p.stockQty ?? 0}</td>
+      <td data-role="meta" data-label="Reserved">${p.reservedQty ?? 0}</td>
+      <td data-role="meta" data-label="Size">${p.displayWidthPct}×${p.displayHeightPct}</td>
+      <td data-role="meta" data-label="Status"><span class="admin-badge ${p.active ? 'admin-badge--active' : 'admin-badge--inactive'}">${p.active ? 'Active' : 'Archived'}</span></td>
+      <td data-role="meta" data-label="Used by">&mdash;</td>
+      <td data-role="actions">
         <button type="button" class="admin-btn admin-btn--ghost admin-btn--small" data-edit="${p.id}">Edit</button>
         ${
           p.active
             ? `<button type="button" class="admin-btn admin-btn--ghost admin-btn--small" data-archive="${p.id}">Archive</button>`
             : `<button type="button" class="admin-btn admin-btn--ghost admin-btn--small" data-reactivate="${p.id}">Reactivate</button>`
         }
-        ${claims?.role === 'owner' ? `<button type="button" class="admin-btn admin-btn--danger admin-btn--small" data-delete="${p.id}">Delete</button>` : ''}
+        ${claims?.role === 'owner' ? `<button type="button" class="admin-btn admin-btn--danger-ghost admin-btn--small" data-delete="${p.id}">Delete</button>` : ''}
       </td>
     </tr>`
     )
@@ -117,17 +122,26 @@ document.querySelector('[data-patch-rows]').addEventListener('click', async (e) 
     openForm(patches.find((p) => p.id === editBtn.dataset.edit));
   } else if (archiveBtn) {
     await apiFetch('/api/admin-archive-patch', { method: 'POST', body: JSON.stringify({ id: archiveBtn.dataset.archive }) });
+    showToast('Patch archived.', 'success');
     await loadPatches();
   } else if (reactivateBtn) {
     await apiFetch('/api/admin-reactivate-patch', { method: 'POST', body: JSON.stringify({ id: reactivateBtn.dataset.reactivate }) });
+    showToast('Patch reactivated.', 'success');
     await loadPatches();
   } else if (deleteBtn) {
-    if (!confirm('Permanently delete this patch? This cannot be undone.')) return;
+    const ok = await confirmAction({
+      title: 'Permanently delete this patch?',
+      message: 'This cannot be undone. Patches with order history, active reservations, or that are still assigned to a product can\'t be deleted.',
+      confirmLabel: 'Delete',
+      danger: true,
+    });
+    if (!ok) return;
     try {
       await apiFetch('/api/admin-delete-patch', { method: 'POST', body: JSON.stringify({ id: deleteBtn.dataset.delete }) });
+      showToast('Patch deleted.', 'success');
       await loadPatches();
     } catch (err) {
-      alert(err.message);
+      showToast(err.message, 'error');
     }
   }
 });
@@ -135,6 +149,8 @@ document.querySelector('[data-patch-rows]').addEventListener('click', async (e) 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   setNote('');
+  const saveBtn = document.querySelector('[data-save-patch-btn]');
+  setButtonBusy(saveBtn, true, 'Saving…');
   try {
     const body = {
       id: editingId || undefined,
@@ -149,7 +165,7 @@ form.addEventListener('submit', async (e) => {
       stockAdjustmentReason: form.stockAdjustmentReason.value.trim(),
     };
     const result = await apiFetch('/api/admin-save-patch', { method: 'POST', body: JSON.stringify(body) });
-    setNote('Saved.', false);
+    showToast('Patch saved.', 'success');
     editingId = result.id;
     form.querySelector('[name="id"]').value = result.id;
     imageInput.disabled = false;
@@ -160,22 +176,23 @@ form.addEventListener('submit', async (e) => {
     await loadPatches();
   } catch (err) {
     setNote(err.message, true);
+  } finally {
+    setButtonBusy(saveBtn, false);
   }
 });
 
 imageInput.addEventListener('change', async () => {
   const file = imageInput.files[0];
   if (!file || !editingId) return;
-  setNote('Uploading image…', false);
   try {
     const { url } = await uploadImage(file, { entityType: 'patch', entityId: editingId, role: 'image' });
     imagePreview.src = url;
     imagePreview.style.visibility = 'visible';
     removeImageBtn.hidden = false;
-    setNote('Image uploaded.', false);
+    showToast('Image uploaded.', 'success');
     await loadPatches();
   } catch (err) {
-    setNote(err.message, true);
+    showToast(err.message, 'error');
   }
   imageInput.value = '';
 });

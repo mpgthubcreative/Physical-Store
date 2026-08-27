@@ -1,6 +1,8 @@
 import { requireSession, apiFetch } from './admin-auth.js';
 import { renderAdminShell } from './admin-shell.js';
 import { uploadImage, removeImage } from './image-upload.js';
+import { confirmAction, showToast, setButtonBusy } from './admin-ui.js';
+import { escapeHtml } from './admin-format.js';
 
 let claims = null;
 let products = [];
@@ -66,19 +68,21 @@ function addVariantRow(variant) {
     const file = imgInput.files[0];
     const variantId = row.querySelector('[data-v-id]').value.trim();
     if (!file || !editingId || !variantId) return;
-    setNote('Uploading stage image…', false);
     try {
       const { url } = await uploadImage(file, { entityType: 'product', entityId: editingId, role: 'stageImage', variantId });
       imgPreview.src = url;
       imgPreview.style.visibility = 'visible';
-      setNote('Stage image uploaded.', false);
+      showToast('Stage image uploaded.', 'success');
     } catch (err) {
-      setNote(err.message, true);
+      showToast(err.message, 'error');
     }
     imgInput.value = '';
   });
 
-  row.querySelector('[data-remove-variant]').addEventListener('click', () => row.remove());
+  row.querySelector('[data-remove-variant]').addEventListener('click', () => {
+    row.remove();
+    refreshAdjustmentReasonVisibility();
+  });
 
   variantRowsEl.appendChild(frag);
 }
@@ -108,7 +112,7 @@ function renderCollectionCheckboxes(selectedIds) {
       (c) => `
     <label class="admin-patch-pick ${selectedIds.includes(c.id) ? 'is-checked' : ''}">
       <input type="checkbox" value="${c.id}" ${selectedIds.includes(c.id) ? 'checked' : ''} />
-      ${c.name}${c.active ? '' : ' (archived)'}
+      ${escapeHtml(c.name)}${c.active ? '' : ' (archived)'}
     </label>`
     )
     .join('');
@@ -127,7 +131,7 @@ function renderPatchCheckboxes(selectedIds) {
     <label class="admin-patch-pick ${selectedIds.includes(p.id) ? 'is-checked' : ''}">
       <input type="checkbox" value="${p.id}" ${selectedIds.includes(p.id) ? 'checked' : ''} />
       <span class="admin-patch-swatch" style="background:${p.hex};"></span>
-      ${p.name}${p.active ? '' : ' (archived)'}
+      ${escapeHtml(p.name)}${p.active ? '' : ' (archived)'}
     </label>`
     )
     .join('');
@@ -214,28 +218,34 @@ allowTextCheckbox.addEventListener('change', () => {
 function renderRows() {
   const tbody = document.querySelector('[data-product-rows]');
   if (!products.length) {
-    tbody.innerHTML = '<tr><td colspan="8" class="admin-empty">No products yet — add your first one.</td></tr>';
+    tbody.innerHTML = `
+      <tr><td colspan="8">
+        <div class="admin-empty-state">
+          <div class="admin-empty-state__title">No products yet</div>
+          <div class="admin-empty-state__desc">Add your first product to start building the catalog.</div>
+        </div>
+      </td></tr>`;
     return;
   }
   tbody.innerHTML = products
     .map(
       (p) => `
     <tr>
-      <td>${p.thumbnailUrl ? `<img class="admin-thumb" src="${p.thumbnailUrl}" alt="" />` : `<span class="admin-thumb"></span>`}</td>
-      <td>${p.title}${p.featured ? ' <span class="admin-badge admin-badge--active">Featured</span>' : ''}</td>
-      <td>₱${p.basePrice}</td>
-      <td>${p.variantCount}</td>
-      <td>${p.totalStock === 0 ? '<span class="admin-badge admin-badge--low">Out of stock</span>' : p.totalStock}</td>
-      <td>${p.totalReserved || 0}</td>
-      <td><span class="admin-badge ${p.active ? 'admin-badge--active' : 'admin-badge--inactive'}">${p.active ? 'Active' : 'Archived'}</span></td>
-      <td>
+      <td data-role="media">${p.thumbnailUrl ? `<img class="admin-thumb" src="${p.thumbnailUrl}" alt="" />` : `<span class="admin-thumb"></span>`}</td>
+      <td data-role="heading"><span class="admin-row-title">${escapeHtml(p.title)}</span>${p.featured ? ' <span class="admin-badge admin-badge--info">Featured</span>' : ''}</td>
+      <td data-role="meta" data-label="Price">₱${p.basePrice}</td>
+      <td data-role="meta" data-label="Variants">${p.variantCount}</td>
+      <td data-role="meta" data-label="Stock">${p.totalStock === 0 ? '<span class="admin-badge admin-badge--danger">Out of stock</span>' : p.totalStock}</td>
+      <td data-role="meta" data-label="Reserved">${p.totalReserved || 0}</td>
+      <td data-role="meta" data-label="Status"><span class="admin-badge ${p.active ? 'admin-badge--active' : 'admin-badge--inactive'}">${p.active ? 'Active' : 'Archived'}</span></td>
+      <td data-role="actions">
         <button type="button" class="admin-btn admin-btn--ghost admin-btn--small" data-edit="${p.id}">Edit</button>
         ${
           p.active
             ? `<button type="button" class="admin-btn admin-btn--ghost admin-btn--small" data-archive="${p.id}">Archive</button>`
             : `<button type="button" class="admin-btn admin-btn--ghost admin-btn--small" data-reactivate="${p.id}">Reactivate</button>`
         }
-        ${claims?.role === 'owner' ? `<button type="button" class="admin-btn admin-btn--danger admin-btn--small" data-delete="${p.id}">Delete</button>` : ''}
+        ${claims?.role === 'owner' ? `<button type="button" class="admin-btn admin-btn--danger-ghost admin-btn--small" data-delete="${p.id}">Delete</button>` : ''}
       </td>
     </tr>`
     )
@@ -263,17 +273,26 @@ document.querySelector('[data-product-rows]').addEventListener('click', async (e
     openForm(product);
   } else if (archiveBtn) {
     await apiFetch('/api/admin-archive-product', { method: 'POST', body: JSON.stringify({ id: archiveBtn.dataset.archive }) });
+    showToast('Product archived.', 'success');
     await loadProducts();
   } else if (reactivateBtn) {
     await apiFetch('/api/admin-reactivate-product', { method: 'POST', body: JSON.stringify({ id: reactivateBtn.dataset.reactivate }) });
+    showToast('Product reactivated.', 'success');
     await loadProducts();
   } else if (deleteBtn) {
-    if (!confirm('Permanently delete this product? This cannot be undone.')) return;
+    const ok = await confirmAction({
+      title: 'Permanently delete this product?',
+      message: 'This cannot be undone. Products with order history or active reservations can\'t be deleted — archive them instead.',
+      confirmLabel: 'Delete',
+      danger: true,
+    });
+    if (!ok) return;
     try {
       await apiFetch('/api/admin-delete-product', { method: 'POST', body: JSON.stringify({ id: deleteBtn.dataset.delete }) });
+      showToast('Product deleted.', 'success');
       await loadProducts();
     } catch (err) {
-      alert(err.message);
+      showToast(err.message, 'error');
     }
   }
 });
@@ -281,6 +300,8 @@ document.querySelector('[data-product-rows]').addEventListener('click', async (e
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   setNote('');
+  const saveBtn = document.querySelector('[data-save-product-btn]');
+  setButtonBusy(saveBtn, true, 'Saving…');
   try {
     const customizable = customizableCheckbox.checked;
     const allowText = allowTextCheckbox.checked;
@@ -323,7 +344,7 @@ form.addEventListener('submit', async (e) => {
     };
 
     const result = await apiFetch('/api/admin-save-product', { method: 'POST', body: JSON.stringify(body) });
-    setNote('Saved.', false);
+    showToast('Product saved.', 'success');
     editingId = result.id;
     form.querySelector('[name="id"]').value = result.id;
     thumbnailInput.disabled = false;
@@ -340,23 +361,24 @@ form.addEventListener('submit', async (e) => {
     adjustmentReasonField.hidden = true;
   } catch (err) {
     setNote(err.message, true);
+  } finally {
+    setButtonBusy(saveBtn, false);
   }
 });
 
 thumbnailInput.addEventListener('change', async () => {
   const file = thumbnailInput.files[0];
   if (!file || !editingId) return;
-  setNote('Uploading thumbnail…', false);
   try {
     const { url, path } = await uploadImage(file, { entityType: 'product', entityId: editingId, role: 'thumbnail' });
     thumbnailPreview.src = url;
     thumbnailPreview.style.visibility = 'visible';
     removeThumbnailBtn.hidden = false;
     editingProduct = { ...editingProduct, thumbnail: path };
-    setNote('Thumbnail uploaded.', false);
+    showToast('Thumbnail uploaded.', 'success');
     await loadProducts();
   } catch (err) {
-    setNote(err.message, true);
+    showToast(err.message, 'error');
   }
   thumbnailInput.value = '';
 });

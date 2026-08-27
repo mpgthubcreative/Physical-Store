@@ -12,67 +12,71 @@
 <body>
 
 <div class="admin-shell">
-  <div id="admin-topbar"></div>
-  <main class="admin-main">
-    <div class="admin-page-head">
-      <h1>Collections</h1>
-      <button type="button" class="admin-btn" data-new-collection>+ New collection</button>
-    </div>
+  <div id="admin-sidebar"></div>
+  <div class="admin-content">
+    <div id="admin-topbar"></div>
+    <main class="admin-main">
+      <div class="admin-page-head">
+        <h1>Collections</h1>
+        <button type="button" class="admin-btn" data-new-collection>+ New collection</button>
+      </div>
 
-    <div class="admin-card" data-collection-form-card hidden>
-      <h2 style="font:700 18px var(--font-heading);color:var(--ink);margin:0 0 16px;" data-form-title>New collection</h2>
-      <form data-collection-form novalidate>
-        <input type="hidden" name="id" />
-        <div class="admin-form-grid two-col">
-          <div class="admin-field">
-            <label for="c-name">Name</label>
-            <input id="c-name" name="name" required maxlength="80" />
+      <div class="admin-card" data-collection-form-card hidden>
+        <h2 class="admin-card__title" data-form-title>New collection</h2>
+        <form data-collection-form novalidate>
+          <input type="hidden" name="id" />
+          <div class="admin-form-grid two-col">
+            <div class="admin-field">
+              <label for="c-name">Name <span class="req">*</span></label>
+              <input id="c-name" name="name" required maxlength="80" />
+            </div>
+            <div class="admin-field">
+              <label for="c-slug">Slug <span class="hint">(auto-filled from name if left blank)</span></label>
+              <input id="c-slug" name="slug" maxlength="80" />
+            </div>
+            <div class="admin-field">
+              <label for="c-sort">Sort order</label>
+              <input id="c-sort" name="sortOrder" type="number" step="1" value="0" />
+            </div>
+            <div class="admin-field">
+              <label>Status</label>
+              <label class="admin-checkbox"><input name="active" type="checkbox" checked /> Active</label>
+              <label class="admin-checkbox"><input name="featured" type="checkbox" /> Featured</label>
+            </div>
           </div>
-          <div class="admin-field">
-            <label for="c-slug">Slug <span class="hint">(auto-filled from name if left blank)</span></label>
-            <input id="c-slug" name="slug" maxlength="80" />
+          <div class="admin-field" style="margin-top:16px;">
+            <label for="c-desc">Description <span class="hint">(optional)</span></label>
+            <textarea id="c-desc" name="description" maxlength="500"></textarea>
           </div>
-          <div class="admin-field">
-            <label for="c-sort">Sort order</label>
-            <input id="c-sort" name="sortOrder" type="number" step="1" value="0" />
-          </div>
-          <div class="admin-field">
-            <label>Status</label>
-            <label class="admin-checkbox"><input name="active" type="checkbox" checked /> Active</label>
-            <label class="admin-checkbox"><input name="featured" type="checkbox" /> Featured</label>
-          </div>
-        </div>
-        <div class="admin-field" style="margin-top:16px;">
-          <label for="c-desc">Description <span class="hint">(optional)</span></label>
-          <textarea id="c-desc" name="description" maxlength="500"></textarea>
-        </div>
 
-        <div class="admin-field" style="margin-top:16px;">
-          <label>Image</label>
-          <div class="admin-image-slot">
-            <img data-collection-image-preview alt="" />
-            <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-collection-image-input />
-            <button type="button" class="admin-btn admin-btn--ghost admin-btn--small" data-remove-collection-image hidden>Remove image</button>
+          <div class="admin-field" style="margin-top:16px;">
+            <label>Image</label>
+            <div class="admin-image-drop">
+              <img data-collection-image-preview alt="" style="width:68px;height:68px;border-radius:10px;object-fit:cover;background:var(--white);border:1px solid var(--border);" />
+              <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-collection-image-input />
+              <button type="button" class="admin-btn admin-btn--ghost admin-btn--small" data-remove-collection-image hidden>Remove image</button>
+            </div>
           </div>
-        </div>
 
-        <div style="display:flex;gap:10px;margin-top:20px;">
-          <button type="submit" class="admin-btn">Save collection</button>
-          <button type="button" class="admin-btn admin-btn--ghost" data-cancel-form>Cancel</button>
-        </div>
-        <p class="admin-note" data-collection-form-note></p>
-      </form>
-    </div>
+          <hr class="admin-divider" />
+          <div style="display:flex;gap:10px;">
+            <button type="submit" class="admin-btn" data-save-collection-btn>Save collection</button>
+            <button type="button" class="admin-btn admin-btn--ghost" data-cancel-form>Cancel</button>
+          </div>
+          <p class="admin-note" data-collection-form-note></p>
+        </form>
+      </div>
 
-    <div class="admin-table-wrap">
-      <table class="admin-table">
-        <thead><tr><th></th><th>Name</th><th>Slug</th><th>Status</th><th></th></tr></thead>
-        <tbody data-collection-rows>
-          <tr><td colspan="5" class="admin-empty">Loading…</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </main>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead><tr><th></th><th>Name</th><th>Slug</th><th>Status</th><th></th></tr></thead>
+          <tbody data-collection-rows>
+            <tr><td colspan="5" class="admin-empty">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
 </div>
 
 <script type="module" src="./js/collections.js"></script>

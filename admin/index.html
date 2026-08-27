@@ -12,23 +12,85 @@
 <body>
 
 <div class="admin-shell">
-  <div id="admin-topbar"></div>
-  <main class="admin-main">
-    <div class="admin-page-head">
-      <h1>Dashboard</h1>
-    </div>
-    <div class="admin-form-grid two-col" data-summary-grid>
-      <div class="admin-card"><div class="hint">Pending payment reviews</div><div style="font:700 28px var(--font-heading);" data-count-pending-review>&mdash;</div></div>
-      <div class="admin-card"><div class="hint">Paid, awaiting processing</div><div style="font:700 28px var(--font-heading);" data-count-paid-awaiting>&mdash;</div></div>
-      <div class="admin-card"><div class="hint">Total orders</div><div style="font:700 28px var(--font-heading);" data-count-total-orders>&mdash;</div></div>
-    </div>
-    <div class="admin-form-grid two-col" data-summary-grid>
-      <div class="admin-card"><div class="hint">Products</div><div style="font:700 28px var(--font-heading);" data-count-products>&mdash;</div></div>
-      <div class="admin-card"><div class="hint">Patches</div><div style="font:700 28px var(--font-heading);" data-count-patches>&mdash;</div></div>
-      <div class="admin-card"><div class="hint">Collections</div><div style="font:700 28px var(--font-heading);" data-count-collections>&mdash;</div></div>
-      <div class="admin-card"><div class="hint">Low stock variants</div><div style="font:700 28px var(--font-heading);" data-count-lowstock>&mdash;</div></div>
-    </div>
-  </main>
+  <div id="admin-sidebar"></div>
+  <div class="admin-content">
+    <div id="admin-topbar"></div>
+    <main class="admin-main">
+      <div class="admin-page-head">
+        <div>
+          <h1>Dashboard</h1>
+          <p class="admin-page-sub">A quick operational snapshot.</p>
+        </div>
+      </div>
+
+      <div class="admin-kpi-grid">
+        <div class="admin-kpi">
+          <div class="admin-kpi__top">
+            <span class="admin-kpi__label">Pending payment reviews</span>
+          </div>
+          <div class="admin-kpi__value is-loading" data-count-pending-review>&mdash;</div>
+        </div>
+        <div class="admin-kpi">
+          <div class="admin-kpi__top">
+            <span class="admin-kpi__label">Paid, awaiting processing</span>
+          </div>
+          <div class="admin-kpi__value is-loading" data-count-paid-awaiting>&mdash;</div>
+        </div>
+        <div class="admin-kpi">
+          <div class="admin-kpi__top">
+            <span class="admin-kpi__label">Total orders</span>
+          </div>
+          <div class="admin-kpi__value is-loading" data-count-total-orders>&mdash;</div>
+        </div>
+        <div class="admin-kpi">
+          <div class="admin-kpi__top">
+            <span class="admin-kpi__label">Active products</span>
+          </div>
+          <div class="admin-kpi__value is-loading" data-count-products>&mdash;</div>
+          <div class="admin-kpi__sub" data-count-products-sub></div>
+        </div>
+        <div class="admin-kpi">
+          <div class="admin-kpi__top">
+            <span class="admin-kpi__label">Patches</span>
+          </div>
+          <div class="admin-kpi__value is-loading" data-count-patches>&mdash;</div>
+        </div>
+        <div class="admin-kpi">
+          <div class="admin-kpi__top">
+            <span class="admin-kpi__label">Collections</span>
+          </div>
+          <div class="admin-kpi__value is-loading" data-count-collections>&mdash;</div>
+        </div>
+        <div class="admin-kpi">
+          <div class="admin-kpi__top">
+            <span class="admin-kpi__label">Out-of-stock products</span>
+          </div>
+          <div class="admin-kpi__value is-loading" data-count-lowstock>&mdash;</div>
+        </div>
+      </div>
+
+      <div class="admin-section-head">
+        <h2>Recent orders</h2>
+      </div>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr><th>Order #</th><th>Customer</th><th>Total</th><th>Payment</th><th>Fulfillment</th><th>Date</th><th></th></tr>
+          </thead>
+          <tbody data-recent-orders>
+            <tr><td colspan="7" class="admin-empty">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="admin-section-head">
+        <h2>Attention needed</h2>
+      </div>
+      <div class="admin-card" data-attention-card>
+        <p class="admin-loading-line"><span class="admin-btn__spinner"></span> Loading…</p>
+      </div>
+    </main>
+  </div>
 </div>
 
 <script type="module" src="./js/dashboard.js"></script>

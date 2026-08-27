@@ -1,6 +1,7 @@
 import { signIn } from './admin-auth.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js';
 import { auth } from './firebase-init.js';
+import { setButtonBusy } from './admin-ui.js';
 
 // Already signed in? Skip straight to the dashboard rather than showing the form.
 onAuthStateChanged(auth, (user) => {
@@ -18,7 +19,7 @@ form.addEventListener('submit', async (e) => {
   const email = form.email.value.trim();
   const password = form.password.value;
   const submitBtn = form.querySelector('button[type=submit]');
-  submitBtn.disabled = true;
+  setButtonBusy(submitBtn, true, 'Signing in…');
 
   try {
     await signIn(email, password);
@@ -26,6 +27,6 @@ form.addEventListener('submit', async (e) => {
   } catch (err) {
     note.textContent = 'Sign-in failed — check your email and password.';
     note.className = 'admin-note is-error';
-    submitBtn.disabled = false;
+    setButtonBusy(submitBtn, false);
   }
 });

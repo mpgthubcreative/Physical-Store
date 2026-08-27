@@ -12,51 +12,56 @@
 <body>
 
 <div class="admin-shell">
-  <div id="admin-topbar"></div>
-  <main class="admin-main">
-    <div class="admin-page-head">
-      <h1>Orders</h1>
-    </div>
-
-    <div class="admin-card" style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;">
-      <div class="admin-field" style="max-width:220px;">
-        <label for="filter-payment">Payment status</label>
-        <select id="filter-payment" data-filter-payment>
-          <option value="">All</option>
-          <option value="awaiting_payment">Awaiting payment</option>
-          <option value="pending_review">Pending review</option>
-          <option value="paid">Paid</option>
-          <option value="rejected">Rejected</option>
-        </select>
+  <div id="admin-sidebar"></div>
+  <div class="admin-content">
+    <div id="admin-topbar"></div>
+    <main class="admin-main">
+      <div class="admin-page-head">
+        <h1>Orders</h1>
       </div>
-      <div class="admin-field" style="max-width:220px;">
-        <label for="filter-fulfillment">Fulfillment status</label>
-        <select id="filter-fulfillment" data-filter-fulfillment>
-          <option value="">All</option>
-          <option value="unfulfilled">Unfulfilled</option>
-          <option value="processing">Processing</option>
-          <option value="ready_for_pickup">Ready for pickup</option>
-          <option value="shipped">Shipped</option>
-          <option value="completed">Completed</option>
-        </select>
+
+      <div class="admin-card">
+        <div class="admin-filters">
+          <div class="admin-field" style="max-width:220px;">
+            <label for="filter-payment">Payment status</label>
+            <select id="filter-payment" data-filter-payment>
+              <option value="">All</option>
+              <option value="awaiting_payment">Awaiting payment</option>
+              <option value="pending_review">Pending review</option>
+              <option value="paid">Paid</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
+          <div class="admin-field" style="max-width:220px;">
+            <label for="filter-fulfillment">Fulfillment status</label>
+            <select id="filter-fulfillment" data-filter-fulfillment>
+              <option value="">All</option>
+              <option value="unfulfilled">Unfulfilled</option>
+              <option value="processing">Processing</option>
+              <option value="ready_for_pickup">Ready for pickup</option>
+              <option value="shipped">Shipped</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+        </div>
       </div>
-    </div>
 
-    <div class="admin-table-wrap">
-      <table class="admin-table">
-        <thead>
-          <tr><th>Order #</th><th>Customer</th><th>Date</th><th>Total</th><th>Payment</th><th>Fulfillment</th><th></th></tr>
-        </thead>
-        <tbody data-order-rows>
-          <tr><td colspan="7" class="admin-empty">Loading…</td></tr>
-        </tbody>
-      </table>
-    </div>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr><th>Order #</th><th>Customer</th><th>Date</th><th>Total</th><th>Payment</th><th>Fulfillment</th><th></th></tr>
+          </thead>
+          <tbody data-order-rows>
+            <tr><td colspan="7" class="admin-empty">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
 
-    <div style="text-align:center;margin-top:16px;">
-      <button type="button" class="admin-btn admin-btn--ghost" data-load-more hidden>Load more</button>
-    </div>
-  </main>
+      <div style="text-align:center;margin-top:16px;">
+        <button type="button" class="admin-btn admin-btn--ghost" data-load-more hidden>Load more</button>
+      </div>
+    </main>
+  </div>
 </div>
 
 <script type="module" src="./js/orders.js"></script>

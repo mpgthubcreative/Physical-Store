@@ -1,49 +1,38 @@
 import { requireSession, apiFetch } from './admin-auth.js';
 import { renderAdminShell } from './admin-shell.js';
+import { PAYMENT_STATUS, FULFILLMENT_STATUS, statusBadge, fmtMoney, fmtDate, escapeHtml } from './admin-format.js';
 
 let orders = [];
 let nextCursor = null;
 
-const PAYMENT_LABELS = { awaiting_payment: 'Awaiting payment', pending_review: 'Pending review', paid: 'Paid', rejected: 'Rejected' };
-const PAYMENT_BADGE = { awaiting_payment: 'admin-badge--inactive', pending_review: 'admin-badge--low', paid: 'admin-badge--active', rejected: 'admin-badge--inactive' };
-const FULFILLMENT_LABELS = {
-  unfulfilled: 'Unfulfilled',
-  processing: 'Processing',
-  ready_for_pickup: 'Ready for pickup',
-  shipped: 'Shipped',
-  completed: 'Completed',
-};
-// Only surfaced when it needs attention — 'reserved'/'consumed' are the
-// unremarkable steady states, so no badge is shown for those.
-const INVENTORY_BADGE = { locked: 'Inventory locked', expired: 'Reservation expired' };
-
-function fmtDate(v) {
-  if (!v) return '—';
-  const d = v._seconds ? new Date(v._seconds * 1000) : new Date(v);
-  if (Number.isNaN(d.getTime())) return '—';
-  return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-}
-function fmtMoney(n) {
-  return '₱' + Number(n || 0).toLocaleString('en-PH') + '.00';
-}
-
 function renderRows() {
   const tbody = document.querySelector('[data-order-rows]');
   if (!orders.length) {
-    tbody.innerHTML = '<tr><td colspan="7" class="admin-empty">No orders yet.</td></tr>';
+    tbody.innerHTML = `
+      <tr><td colspan="7">
+        <div class="admin-empty-state">
+          <div class="admin-empty-state__title">No orders match these filters</div>
+          <div class="admin-empty-state__desc">Try a different payment or fulfillment status, or clear the filters.</div>
+        </div>
+      </td></tr>`;
     return;
   }
   tbody.innerHTML = orders
     .map(
       (o) => `
     <tr data-order-id="${o.orderId}" style="cursor:pointer;">
-      <td>${o.orderNumber}${o.isTest ? ' <span class="admin-badge admin-badge--low">TEST</span>' : ''}</td>
-      <td>${o.customerName}<br><span class="hint">${o.customerEmail}</span></td>
-      <td>${fmtDate(o.createdAt)}</td>
-      <td>${fmtMoney(o.total)}</td>
-      <td><span class="admin-badge ${PAYMENT_BADGE[o.paymentStatus] || ''}">${PAYMENT_LABELS[o.paymentStatus] || o.paymentStatus}</span>${INVENTORY_BADGE[o.inventoryStatus] ? ' <span class="admin-badge admin-badge--low">' + INVENTORY_BADGE[o.inventoryStatus] + '</span>' : ''}</td>
-      <td>${FULFILLMENT_LABELS[o.fulfillmentStatus] || o.fulfillmentStatus}</td>
-      <td><a class="admin-btn admin-btn--ghost admin-btn--small" href="order-detail.html?id=${o.orderId}">View</a></td>
+      <td data-role="heading"><span class="admin-row-title">${o.orderNumber}</span>${o.isTest ? ' <span class="admin-badge admin-badge--neutral">TEST</span>' : ''}</td>
+      <td data-role="meta" data-label="Customer">
+        <div>
+          ${escapeHtml(o.customerName)}
+          <div class="admin-row-sub">${escapeHtml(o.customerEmail)}</div>
+        </div>
+      </td>
+      <td data-role="meta" data-label="Date">${fmtDate(o.createdAt)}</td>
+      <td data-role="meta" data-label="Total">${fmtMoney(o.total)}</td>
+      <td data-role="meta" data-label="Payment">${statusBadge(PAYMENT_STATUS, o.paymentStatus)}</td>
+      <td data-role="meta" data-label="Fulfillment">${statusBadge(FULFILLMENT_STATUS, o.fulfillmentStatus)}</td>
+      <td data-role="actions"><a class="admin-btn admin-btn--ghost admin-btn--small" href="order-detail.html?id=${o.orderId}">View</a></td>
     </tr>`
     )
     .join('');
@@ -60,6 +49,7 @@ async function loadOrders(reset) {
   if (reset) {
     orders = [];
     nextCursor = null;
+    document.querySelector('[data-order-rows]').innerHTML = '<tr><td colspan="7" class="admin-empty">Loading…</td></tr>';
   }
   const params = new URLSearchParams();
   params.set('limit', '20');
@@ -83,6 +73,12 @@ document.querySelector('[data-load-more]').addEventListener('click', () => loadO
 async function init() {
   await requireSession();
   await renderAdminShell('orders');
+
+  // Pre-select a filter when arriving from a dashboard "Attention needed" link.
+  const params = new URLSearchParams(location.search);
+  const paymentStatus = params.get('paymentStatus');
+  if (paymentStatus) document.querySelector('[data-filter-payment]').value = paymentStatus;
+
   await loadOrders(true);
 }
 

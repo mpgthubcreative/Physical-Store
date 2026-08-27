@@ -1,6 +1,8 @@
 import { requireSession, apiFetch } from './admin-auth.js';
 import { renderAdminShell } from './admin-shell.js';
 import { uploadImage, removeImage } from './image-upload.js';
+import { confirmAction, showToast, setButtonBusy } from './admin-ui.js';
+import { escapeHtml } from './admin-format.js';
 
 let claims = null;
 let collections = [];
@@ -49,25 +51,31 @@ function closeForm() {
 function renderRows() {
   const tbody = document.querySelector('[data-collection-rows]');
   if (!collections.length) {
-    tbody.innerHTML = '<tr><td colspan="5" class="admin-empty">No collections yet — add your first one.</td></tr>';
+    tbody.innerHTML = `
+      <tr><td colspan="5">
+        <div class="admin-empty-state">
+          <div class="admin-empty-state__title">No collections yet</div>
+          <div class="admin-empty-state__desc">Group products together so they're easy to browse on the storefront.</div>
+        </div>
+      </td></tr>`;
     return;
   }
   tbody.innerHTML = collections
     .map(
       (c) => `
     <tr>
-      <td>${c.imageUrl ? `<img class="admin-thumb" src="${c.imageUrl}" alt="" />` : `<span class="admin-thumb"></span>`}</td>
-      <td>${c.name}</td>
-      <td>${c.slug}</td>
-      <td><span class="admin-badge ${c.active ? 'admin-badge--active' : 'admin-badge--inactive'}">${c.active ? 'Active' : 'Archived'}</span></td>
-      <td>
+      <td data-role="media">${c.imageUrl ? `<img class="admin-thumb" src="${c.imageUrl}" alt="" />` : `<span class="admin-thumb"></span>`}</td>
+      <td data-role="heading"><span class="admin-row-title">${escapeHtml(c.name)}</span>${c.featured ? ' <span class="admin-badge admin-badge--info">Featured</span>' : ''}</td>
+      <td data-role="meta" data-label="Slug">${escapeHtml(c.slug)}</td>
+      <td data-role="meta" data-label="Status"><span class="admin-badge ${c.active ? 'admin-badge--active' : 'admin-badge--inactive'}">${c.active ? 'Active' : 'Archived'}</span></td>
+      <td data-role="actions">
         <button type="button" class="admin-btn admin-btn--ghost admin-btn--small" data-edit="${c.id}">Edit</button>
         ${
           c.active
             ? `<button type="button" class="admin-btn admin-btn--ghost admin-btn--small" data-archive="${c.id}">Archive</button>`
             : `<button type="button" class="admin-btn admin-btn--ghost admin-btn--small" data-reactivate="${c.id}">Reactivate</button>`
         }
-        ${claims?.role === 'owner' ? `<button type="button" class="admin-btn admin-btn--danger admin-btn--small" data-delete="${c.id}">Delete</button>` : ''}
+        ${claims?.role === 'owner' ? `<button type="button" class="admin-btn admin-btn--danger-ghost admin-btn--small" data-delete="${c.id}">Delete</button>` : ''}
       </td>
     </tr>`
     )
@@ -93,17 +101,26 @@ document.querySelector('[data-collection-rows]').addEventListener('click', async
     openForm(collections.find((c) => c.id === editBtn.dataset.edit));
   } else if (archiveBtn) {
     await apiFetch('/api/admin-archive-collection', { method: 'POST', body: JSON.stringify({ id: archiveBtn.dataset.archive }) });
+    showToast('Collection archived.', 'success');
     await loadCollections();
   } else if (reactivateBtn) {
     await apiFetch('/api/admin-reactivate-collection', { method: 'POST', body: JSON.stringify({ id: reactivateBtn.dataset.reactivate }) });
+    showToast('Collection reactivated.', 'success');
     await loadCollections();
   } else if (deleteBtn) {
-    if (!confirm('Permanently delete this collection? This cannot be undone.')) return;
+    const ok = await confirmAction({
+      title: 'Permanently delete this collection?',
+      message: 'This cannot be undone.',
+      confirmLabel: 'Delete',
+      danger: true,
+    });
+    if (!ok) return;
     try {
       await apiFetch('/api/admin-delete-collection', { method: 'POST', body: JSON.stringify({ id: deleteBtn.dataset.delete }) });
+      showToast('Collection deleted.', 'success');
       await loadCollections();
     } catch (err) {
-      alert(err.message);
+      showToast(err.message, 'error');
     }
   }
 });
@@ -111,6 +128,8 @@ document.querySelector('[data-collection-rows]').addEventListener('click', async
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   setNote('');
+  const saveBtn = document.querySelector('[data-save-collection-btn]');
+  setButtonBusy(saveBtn, true, 'Saving…');
   try {
     const body = {
       id: editingId || undefined,
@@ -122,7 +141,7 @@ form.addEventListener('submit', async (e) => {
       description: form.description.value,
     };
     const result = await apiFetch('/api/admin-save-collection', { method: 'POST', body: JSON.stringify(body) });
-    setNote('Saved.', false);
+    showToast('Collection saved.', 'success');
     editingId = result.id;
     form.querySelector('[name="id"]').value = result.id;
     imageInput.disabled = false;
@@ -130,22 +149,23 @@ form.addEventListener('submit', async (e) => {
     await loadCollections();
   } catch (err) {
     setNote(err.message, true);
+  } finally {
+    setButtonBusy(saveBtn, false);
   }
 });
 
 imageInput.addEventListener('change', async () => {
   const file = imageInput.files[0];
   if (!file || !editingId) return;
-  setNote('Uploading image…', false);
   try {
     const { url } = await uploadImage(file, { entityType: 'collection', entityId: editingId, role: 'image' });
     imagePreview.src = url;
     imagePreview.style.visibility = 'visible';
     removeImageBtn.hidden = false;
-    setNote('Image uploaded.', false);
+    showToast('Image uploaded.', 'success');
     await loadCollections();
   } catch (err) {
-    setNote(err.message, true);
+    showToast(err.message, 'error');
   }
   imageInput.value = '';
 });

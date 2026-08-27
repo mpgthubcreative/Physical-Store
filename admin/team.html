@@ -12,43 +12,47 @@
 <body>
 
 <div class="admin-shell">
-  <div id="admin-topbar"></div>
-  <main class="admin-main">
-    <div class="admin-page-head">
-      <h1>Team</h1>
-      <button type="button" class="admin-btn" data-new-admin>+ Add admin</button>
-    </div>
+  <div id="admin-sidebar"></div>
+  <div class="admin-content">
+    <div id="admin-topbar"></div>
+    <main class="admin-main">
+      <div class="admin-page-head">
+        <h1>Team</h1>
+        <button type="button" class="admin-btn" data-new-admin>+ Add admin</button>
+      </div>
 
-    <div class="admin-card" data-admin-form-card hidden>
-      <h2 style="font:700 18px var(--font-heading);color:var(--ink);margin:0 0 16px;">Create Admin account</h2>
-      <form data-admin-form novalidate>
-        <div class="admin-form-grid two-col">
-          <div class="admin-field">
-            <label for="t-email">Email</label>
-            <input id="t-email" name="email" type="email" required maxlength="200" />
+      <div class="admin-card" data-admin-form-card hidden>
+        <h2 class="admin-card__title">Create Admin account</h2>
+        <form data-admin-form novalidate>
+          <div class="admin-form-grid two-col">
+            <div class="admin-field">
+              <label for="t-email">Email <span class="req">*</span></label>
+              <input id="t-email" name="email" type="email" required maxlength="200" />
+            </div>
+            <div class="admin-field">
+              <label for="t-password">Temporary password <span class="req">*</span> <span class="hint">(share it with them directly — they should change it after first sign-in)</span></label>
+              <input id="t-password" name="password" type="text" required minlength="8" maxlength="200" />
+            </div>
           </div>
-          <div class="admin-field">
-            <label for="t-password">Temporary password <span class="hint">(share it with them directly — they should change it after first sign-in)</span></label>
-            <input id="t-password" name="password" type="text" required minlength="8" maxlength="200" />
+          <hr class="admin-divider" />
+          <div style="display:flex;gap:10px;">
+            <button type="submit" class="admin-btn" data-create-admin-btn>Create admin</button>
+            <button type="button" class="admin-btn admin-btn--ghost" data-cancel-form>Cancel</button>
           </div>
-        </div>
-        <div style="display:flex;gap:10px;margin-top:20px;">
-          <button type="submit" class="admin-btn">Create admin</button>
-          <button type="button" class="admin-btn admin-btn--ghost" data-cancel-form>Cancel</button>
-        </div>
-        <p class="admin-note" data-admin-form-note></p>
-      </form>
-    </div>
+          <p class="admin-note" data-admin-form-note></p>
+        </form>
+      </div>
 
-    <div class="admin-table-wrap">
-      <table class="admin-table">
-        <thead><tr><th>Email</th><th>Role</th><th>Status</th><th>Date added</th><th></th></tr></thead>
-        <tbody data-team-rows>
-          <tr><td colspan="5" class="admin-empty">Loading…</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </main>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead><tr><th></th><th>Email</th><th>Role</th><th>Status</th><th>Date added</th><th></th></tr></thead>
+          <tbody data-team-rows>
+            <tr><td colspan="6" class="admin-empty">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
 </div>
 
 <script type="module" src="./js/team.js"></script>
