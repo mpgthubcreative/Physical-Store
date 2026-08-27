@@ -3,16 +3,17 @@
  * every skuIndex entry it owns, and its Storage images. Irreversible.
  * Normal removal from the storefront is admin-archive-product.js instead.
  *
- * FUTURE (once Orders exist): this must first check whether any order
- * references this productId and refuse to delete if so — permanently
- * deleting a product that a historical order snapshots would break that
- * order's admin preview. There is no orders collection yet, so that check
- * doesn't exist yet; flagging here so it isn't forgotten when Orders ship.
+ * Blocked outright if any order has ever snapshotted this productId
+ * (see _shared/orderReferences.js) — a historical order must remain
+ * reconstructible even after the live catalog record is gone, and this is
+ * the one action that would actually remove the record itself. Archive
+ * instead once a product has order history.
  */
 const { requireOwner } = require('./_shared/adminAuth');
 const { getDb, getBucket } = require('./_shared/firebaseAdmin');
 const { withErrorHandling, ok, fail } = require('./_shared/response');
 const { releaseAllSkusForProduct } = require('./_shared/productWrite');
+const { isProductReferencedByOrders } = require('./_shared/orderReferences');
 
 async function deleteStorageObject(bucket, path) {
   if (!path) return;
@@ -37,6 +38,10 @@ exports.handler = withErrorHandling(async (event) => {
   const snap = await ref.get();
   if (!snap.exists) return fail(404, 'Product not found.');
   const data = snap.data();
+
+  if (await isProductReferencedByOrders(id, db)) {
+    return fail(409, 'This product has order history and cannot be permanently deleted. Archive it instead.');
+  }
 
   await releaseAllSkusForProduct(db, id);
 

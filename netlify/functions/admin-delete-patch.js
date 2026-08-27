@@ -2,14 +2,15 @@
  * Admin (Owner-only): PERMANENTLY delete a patch. Blocked if any product —
  * active or archived — still lists it in customizationConfig.availablePatchIds,
  * so a product's customizer config never ends up referencing a patch that
- * no longer exists.
- *
- * FUTURE (once Orders exist): also block/flag if any historical order line
- * references this patchId, same reasoning as admin-delete-product.js.
+ * no longer exists. Also blocked if any order has ever snapshotted this
+ * patchId (see _shared/orderReferences.js) — same historical-integrity
+ * reasoning as admin-delete-product.js. Archive instead once a patch has
+ * order history.
  */
 const { requireOwner } = require('./_shared/adminAuth');
 const { getDb, getBucket } = require('./_shared/firebaseAdmin');
 const { withErrorHandling, ok, fail } = require('./_shared/response');
+const { isPatchReferencedByOrders } = require('./_shared/orderReferences');
 
 exports.handler = withErrorHandling(async (event) => {
   if (event.httpMethod !== 'POST') return fail(405, 'Method not allowed.');
@@ -32,6 +33,10 @@ exports.handler = withErrorHandling(async (event) => {
   if (!referencing.empty) {
     const titles = referencing.docs.map((d) => d.data().title).join(', ');
     return fail(409, `Cannot delete — still assigned to: ${titles}. Remove it from those products first.`);
+  }
+
+  if (await isPatchReferencedByOrders(id, db)) {
+    return fail(409, 'This patch has order history and cannot be permanently deleted. Archive it instead.');
   }
 
   const bucket = getBucket();

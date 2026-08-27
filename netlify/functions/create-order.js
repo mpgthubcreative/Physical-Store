@@ -86,6 +86,22 @@ exports.handler = withErrorHandling(async (event) => {
   }
   const { lines, subtotal } = cartResult;
 
+  // Denormalized, flat, deduplicated reference lists — Firestore's
+  // array-contains can't match "does any object in items[] have field X"
+  // since items[] holds rich snapshot objects, not primitives. These three
+  // arrays are what admin-delete-product.js/admin-delete-patch.js/
+  // admin-remove-image.js query to decide whether a permanent delete or
+  // Storage object removal would damage this order's historical integrity.
+  const referencedProductIds = [...new Set(lines.map((l) => l.productId))];
+  const referencedPatchIds = [...new Set(lines.flatMap((l) => (l.customization ? l.customization.patches.map((p) => p.patchId) : [])))];
+  const referencedImagePaths = [
+    ...new Set([
+      ...lines.map((l) => l.thumbnailImagePath).filter(Boolean),
+      ...lines.map((l) => (l.customization ? l.customization.variant.stageImagePath : null)).filter(Boolean),
+      ...lines.flatMap((l) => (l.customization ? l.customization.patches.map((p) => p.imagePath) : [])).filter(Boolean),
+    ]),
+  ];
+
   let shippingFee = shippingFeeBase;
   if (deliveryMethod === 'delivery' && shipping.freeShippingThreshold != null && subtotal >= Number(shipping.freeShippingThreshold)) {
     shippingFee = 0;
@@ -136,6 +152,9 @@ exports.handler = withErrorHandling(async (event) => {
           deliveryAddress,
           orderNotes,
           items: lines,
+          referencedProductIds,
+          referencedPatchIds,
+          referencedImagePaths,
           pricing: { subtotal, shippingFee, total },
           paymentStatus: 'awaiting_payment',
           fulfillmentStatus: 'unfulfilled',

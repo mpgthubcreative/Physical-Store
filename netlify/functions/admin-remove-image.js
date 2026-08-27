@@ -1,12 +1,18 @@
 /*
- * Admin: deletes a Storage image and clears the matching Firestore
- * reference (thumbnail/gallery entry/stageImage/patch or collection image).
+ * Admin: clears the matching Firestore reference (thumbnail/gallery entry/
+ * stageImage/patch or collection image) and — ONLY if no historical order
+ * ever snapshotted this exact path (see _shared/orderReferences.js) —
+ * physically deletes the Storage object too. If an order does reference
+ * it, the image is detached from the live catalog record (it stops
+ * showing on the storefront/admin) but the Storage object itself is left
+ * alone, so that order's admin/customer preview never breaks.
  */
 const { requireAdmin } = require('./_shared/adminAuth');
-const { getBucket } = require('./_shared/firebaseAdmin');
+const { getDb, getBucket } = require('./_shared/firebaseAdmin');
 const { withErrorHandling, ok, fail } = require('./_shared/response');
 const { ValidationError, requireString } = require('./_shared/validation');
 const { validateEntityType, validateRole, detachImage } = require('./_shared/imageEntities');
+const { isImagePathReferencedByOrders } = require('./_shared/orderReferences');
 
 const ALLOWED_PREFIXES = ['product-images/', 'patch-images/', 'collection-images/'];
 
@@ -26,13 +32,18 @@ exports.handler = withErrorHandling(async (event) => {
     throw new ValidationError('Unexpected image path.');
   }
 
-  try {
-    await getBucket().file(path).delete();
-  } catch (err) {
-    if (err.code !== 404) throw err;
+  const db = getDb();
+  const referencedByOrder = await isImagePathReferencedByOrders(path, db);
+
+  if (!referencedByOrder) {
+    try {
+      await getBucket().file(path).delete();
+    } catch (err) {
+      if (err.code !== 404) throw err;
+    }
   }
 
   await detachImage({ entityType, entityId, role, variantId: body.variantId, path, actorUid: auth.uid });
 
-  return ok({ removed: true });
+  return ok({ removed: true, physicallyDeleted: !referencedByOrder });
 });
