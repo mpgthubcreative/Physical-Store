@@ -8,7 +8,13 @@
 function publicUrl(path) {
   if (!path) return null;
   const bucket = process.env.FIREBASE_STORAGE_BUCKET;
-  return `https://storage.googleapis.com/${bucket}/${path}`;
+  // Firebase Storage Security Rules (storage.rules) govern the Firebase-
+  // mediated endpoint below, not the raw GCS API (storage.googleapis.com) —
+  // that endpoint is IAM-controlled and would 403/503 for anonymous reads
+  // regardless of what storage.rules allows. alt=media serves the raw bytes
+  // directly; no download token is needed because the rule below allows
+  // public read.
+  return `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(path)}?alt=media`;
 }
 
 module.exports = { publicUrl };
