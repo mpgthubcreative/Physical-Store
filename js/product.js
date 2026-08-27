@@ -239,6 +239,7 @@
     });
     nameInput.maxLength = config.textMaxLength;
     nameInput.placeholder = 'e.g. Maya';
+    document.querySelector('[data-name-hint]').textContent = `(optional · +${fmtShort(config.textPrice)} · max ${config.textMaxLength})`;
 
     document.querySelector('[data-qty-dec]').addEventListener('click', () => {
       qty = Math.max(1, qty - 1);
