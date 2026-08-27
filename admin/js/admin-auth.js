@@ -16,13 +16,22 @@ import {
 /** Resolves with the signed-in user, or redirects to login and never resolves. */
 function requireSession() {
   return new Promise((resolve) => {
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, async (user) => {
       if (!user) {
         if (!location.pathname.endsWith('/admin/login.html')) {
           location.href = 'login.html';
         }
         return;
       }
+      // Force exactly one fresh token fetch per page load. Custom claims
+      // (admin/role) only take effect on a token refresh — a tab left open
+      // across a claims change (promotion, role change, disable) would
+      // otherwise keep sending a stale cached token that fails
+      // requireAdmin() server-side even though the account is correctly
+      // set up. Firebase caches this refreshed token internally, so every
+      // later non-forced getIdToken() call in apiFetch reuses it — this
+      // isn't a forced refresh on every request, just once per load.
+      await user.getIdToken(true);
       resolve(user);
     });
   });

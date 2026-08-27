@@ -1,7 +1,10 @@
 /**
- * Product page bootstrap: loads a product by ?slug=, wires the customizer
- * engine to this page's DOM (swatches, name field, patch chips, qty,
- * add-to-cart, zoom), and renders "You may also like".
+ * Product page bootstrap: loads a product by ?slug=. Customizable products
+ * (customizationConfig present) get the full live customizer engine;
+ * non-customizable products get a plain variant-swatch image viewer — the
+ * engine was never meant to run without a customizationConfig (it has
+ * nothing to build a boundary/patches from), so this file branches on
+ * product.customizable rather than forcing every product through it.
  */
 (function () {
   function fmtShort(n) {
@@ -29,28 +32,113 @@
     return [productId, snapshot.variantId, layerKey].join('|');
   }
 
-  async function init() {
-    BuddyNav.init('#site-nav', { active: '' });
-    BuddyFooter.init('#site-footer', { showNewsletter: false });
-    BuddyCart.initDrawer();
+  function renderStageMedia(container, product, variant) {
+    container.innerHTML = '';
+    container.classList.add('stage');
+    const media = document.createElement('div');
+    media.className = 'stage__media';
+    media.style.backgroundColor = variant.hex;
+    if (variant.stageImageUrl) {
+      media.style.backgroundImage = `url("${variant.stageImageUrl}")`;
+      media.style.backgroundSize = 'cover';
+      media.style.backgroundPosition = 'center';
+    } else {
+      const label = document.createElement('span');
+      label.className = 'stage__media-label';
+      label.textContent = product.name + ' — ' + variant.name;
+      media.appendChild(label);
+    }
+    container.appendChild(media);
+  }
 
-    const params = new URLSearchParams(location.search);
-    const slug = params.get('slug') || 'everyday-pouch';
-    const product = await window.BuddyProductDetail.getBySlug(slug);
-    const main = document.querySelector('main');
+  // ---- non-customizable product: plain swatch + static image viewer ----
 
-    if (!product) {
-      main.innerHTML = '<div class="container future-page"><h1 class="sec-heading">Product not found</h1><p>That product doesn\'t exist yet.</p></div>';
-      return;
+  function initSimpleProduct(product) {
+    document.querySelector('[data-product-name]').textContent = product.name;
+    document.querySelector('[data-product-price]').textContent = window.BuddyProducts.format(product.basePrice);
+    document.querySelector('[data-addon-note]').textContent = '';
+    document.querySelector('[data-add-price]').textContent = window.BuddyProducts.format(product.basePrice);
+
+    // No customization on this product: hide the customizer-only controls
+    // rather than showing empty/irrelevant fields.
+    document.querySelector('.product-name-field').hidden = true;
+    document.querySelector('.patch-field').hidden = true;
+
+    let variantId = product.variants[0].id;
+    let qty = 1;
+    const stageEl = document.querySelector('[data-stage]');
+    const qtyValEl = document.querySelector('[data-qty-val]');
+
+    function currentVariant() {
+      return product.variants.find((v) => v.id === variantId) || product.variants[0];
     }
 
+    function renderSwatches() {
+      const showSwatches = product.variants.length > 1;
+      document.querySelector('.product-color-label').hidden = !showSwatches;
+      const html = product.variants
+        .map(
+          (v) =>
+            `<button type="button" class="swatch${v.id === variantId ? ' is-active' : ''}" style="background:${v.hex};" data-variant="${v.id}" title="${v.name}" aria-label="${v.name}"></button>`
+        )
+        .join('');
+      document.querySelector('[data-swatch-row-stage]').innerHTML = showSwatches ? html : '';
+      document.querySelector('[data-swatch-row-info]').innerHTML = showSwatches ? html : '';
+      document.querySelector('[data-color-name]').textContent = currentVariant().name;
+    }
+
+    function render() {
+      renderStageMedia(stageEl, product, currentVariant());
+      renderSwatches();
+    }
+
+    document.querySelectorAll('[data-swatch-row-stage], [data-swatch-row-info]').forEach((row) => {
+      row.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-variant]');
+        if (!btn) return;
+        variantId = btn.dataset.variant;
+        render();
+      });
+    });
+
+    document.querySelector('[data-qty-dec]').addEventListener('click', () => {
+      qty = Math.max(1, qty - 1);
+      qtyValEl.textContent = String(qty);
+    });
+    document.querySelector('[data-qty-inc]').addEventListener('click', () => {
+      qty += 1;
+      qtyValEl.textContent = String(qty);
+    });
+
+    document.querySelector('[data-zoom-btn]').addEventListener('click', () => {
+      const node = document.createElement('div');
+      renderStageMedia(node, product, currentVariant());
+      node.classList.add('stage--zoom');
+      window.BuddyModal.open(node);
+    });
+
+    document.querySelector('[data-add-to-cart]').addEventListener('click', () => {
+      const variant = currentVariant();
+      window.BuddyCart.addItem({
+        key: [product.id, variant.id].join('|'),
+        name: product.name,
+        subtitle: variant.name,
+        unitPrice: product.basePrice,
+        qty,
+        thumbColor: variant.hex,
+        customization: null,
+      });
+      window.BuddyCart.open();
+    });
+
+    render();
+  }
+
+  // ---- customizable product: full live customizer engine ----
+
+  function initCustomizableProduct(product) {
     const config = product.customizationConfig;
     let qty = 1;
-
-    document.title = product.name + ' — Buddy Patches';
-    document.querySelector('[data-product-breadcrumb-name]').textContent = product.name;
-    document.querySelector('[data-product-name]').textContent = product.name;
-    document.querySelector('[data-product-description]').textContent = product.description;
 
     const stageEl = document.querySelector('[data-stage]');
     const nameInput = document.querySelector('[data-name-input]');
@@ -64,19 +152,7 @@
       const html = product.variants
         .map((v) => {
           const active = v.id === state.variantId;
-          return (
-            '<button type="button" class="swatch' +
-            (active ? ' is-active' : '') +
-            '" style="background:' +
-            v.hex +
-            ';" data-variant="' +
-            v.id +
-            '" title="' +
-            v.name +
-            '" aria-label="' +
-            v.name +
-            '"></button>'
-          );
+          return `<button type="button" class="swatch${active ? ' is-active' : ''}" style="background:${v.hex};" data-variant="${v.id}" title="${v.name}" aria-label="${v.name}"></button>`;
         })
         .join('');
       document.querySelector('[data-swatch-row-stage]').innerHTML = html;
@@ -94,6 +170,9 @@
       document.querySelector('[data-patch-grid]').innerHTML = config.availablePatches
         .map((p) => {
           const placedCount = state.objects.filter((o) => o.type === 'patch' && o.patchId === p.id).length;
+          const swatch = p.imageUrl
+            ? `<span class="patch-chip__swatch" style="background-image:url('${p.imageUrl}');background-size:cover;background-position:center;"></span>`
+            : `<span class="patch-chip__swatch" style="background:${p.hex};"></span>`;
           return (
             '<button type="button" class="patch-chip' +
             (atMax ? ' is-disabled' : '') +
@@ -102,9 +181,7 @@
             '" ' +
             (atMax ? 'disabled' : '') +
             '>' +
-            '<span class="patch-chip__swatch" style="background:' +
-            p.hex +
-            ';"></span>' +
+            swatch +
             '<span class="patch-chip__name">' +
             p.name +
             '</span>' +
@@ -137,14 +214,11 @@
       if (!textObj) nameInput.value = '';
       else if (nameInput.value !== textObj.value) nameInput.value = textObj.value;
 
-      const addLabel = document.querySelector('[data-add-price]');
-      addLabel.textContent = window.BuddyProducts.format(unit);
+      document.querySelector('[data-add-price]').textContent = window.BuddyProducts.format(unit);
 
       renderSwatches();
       renderPatchGrid();
     }
-
-    // ---- wiring ----
 
     document.querySelectorAll('[data-swatch-row-stage], [data-swatch-row-info]').forEach((row) => {
       row.addEventListener('click', (e) => {
@@ -207,6 +281,34 @@
     });
 
     renderInfo();
+  }
+
+  async function init() {
+    BuddyNav.init('#site-nav', { active: '' });
+    BuddyFooter.init('#site-footer', { showNewsletter: false });
+    BuddyCart.initDrawer();
+
+    const params = new URLSearchParams(location.search);
+    const slug = params.get('slug') || 'everyday-pouch';
+    const product = await window.BuddyProductDetail.getBySlug(slug);
+    const main = document.querySelector('main');
+
+    if (!product) {
+      main.innerHTML = '<div class="container future-page"><h1 class="sec-heading">Product not found</h1><p>That product doesn\'t exist yet.</p></div>';
+      return;
+    }
+
+    document.title = product.name + ' — Buddy Patches';
+    document.querySelector('[data-product-breadcrumb-name]').textContent = product.name;
+    document.querySelector('[data-product-name]').textContent = product.name;
+    document.querySelector('[data-product-description]').textContent = product.description;
+
+    if (product.customizable && product.customizationConfig) {
+      initCustomizableProduct(product);
+    } else {
+      initSimpleProduct(product);
+    }
+
     await renderAlsoLike();
   }
 

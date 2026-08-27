@@ -124,11 +124,20 @@
 
       const media = document.createElement('div');
       media.className = 'stage__media';
-      media.style.background = variant.hex;
-      const label = document.createElement('span');
-      label.className = 'stage__media-label';
-      label.textContent = product.name + ' — ' + variant.name;
-      media.appendChild(label);
+      media.style.backgroundColor = variant.hex;
+      if (variant.stageImageUrl) {
+        // Real photo when the admin has uploaded one for this variant — the
+        // hex still shows briefly underneath while it loads, then is fully
+        // covered. No placeholder label needed over a real image.
+        media.style.backgroundImage = `url("${variant.stageImageUrl}")`;
+        media.style.backgroundSize = 'cover';
+        media.style.backgroundPosition = 'center';
+      } else {
+        const label = document.createElement('span');
+        label.className = 'stage__media-label';
+        label.textContent = product.name + ' — ' + variant.name;
+        media.appendChild(label);
+      }
       container.appendChild(media);
 
       const boundary = document.createElement('div');
@@ -158,11 +167,17 @@
 
         if (obj.type === 'patch') {
           const def = config.availablePatches.find((p) => p.id === obj.patchId);
-          el.style.background = def ? def.hex : '#ccc';
-          const nameSpan = document.createElement('span');
-          nameSpan.className = 'stage-object__label';
-          nameSpan.textContent = def ? def.name : obj.patchId;
-          el.appendChild(nameSpan);
+          if (def && def.imageUrl) {
+            el.style.backgroundImage = `url("${def.imageUrl}")`;
+            el.style.backgroundSize = 'cover';
+            el.style.backgroundPosition = 'center';
+          } else {
+            el.style.background = def ? def.hex : '#ccc';
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'stage-object__label';
+            nameSpan.textContent = def ? def.name : obj.patchId;
+            el.appendChild(nameSpan);
+          }
         } else {
           const textSpan = document.createElement('span');
           textSpan.className = 'stage-object__text';

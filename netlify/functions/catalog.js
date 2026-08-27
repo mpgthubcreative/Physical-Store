@@ -68,7 +68,7 @@ async function handleDetail(db, slug, res) {
         .filter((p) => p.data().active !== false)
         .map((p) => {
           const pd = p.data();
-          return { id: p.id, name: pd.name, hex: pd.hex, price: pd.price, width: pd.displayWidthPct, height: pd.displayHeightPct };
+          return { id: p.id, name: pd.name, hex: pd.hex, price: pd.price, width: pd.displayWidthPct, height: pd.displayHeightPct, imageUrl: publicUrl(pd.image) };
         });
     }
     customizationConfig = {

@@ -625,6 +625,7 @@ a.btn-coral { display: inline-block; text-decoration: none; }
   justify-content: center;
   overflow: hidden;
 }
+.product-card__photo { width: 100%; height: 100%; object-fit: cover; }
 .product-card__image .placeholder-label {
   font: 600 13px var(--font-body);
   color: var(--ink-faint);

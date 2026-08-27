@@ -1,15 +1,20 @@
 /**
- * BuddyProductCard — one card renderer shared by Home's featured grid and
- * the Catalog grid (and later the product page's "You may also like").
- * No real photography yet, so the image slot renders a labeled placeholder
- * in the same panel color the mockup uses for its image-slot components.
+ * BuddyProductCard — one card renderer shared by Home's featured grid, the
+ * Catalog grid, and the product page's "You may also like". Shows the
+ * admin-uploaded thumbnail when one exists; falls back to the labeled
+ * placeholder (the mockup's image-slot look) for products that don't have
+ * one yet — never a broken image icon.
  */
 (function () {
   function render(product) {
+    const media = product.thumbnailUrl
+      ? `<img class="product-card__photo" src="${product.thumbnailUrl}" alt="${product.name}" loading="lazy" />`
+      : `<span class="placeholder-label">${product.name}</span>`;
+
     return `
       <a class="card product-card" href="product.html?slug=${encodeURIComponent(product.slug)}" data-product-slug="${product.slug}">
         <div class="product-card__image">
-          <span class="placeholder-label">${product.name}</span>
+          ${media}
           ${product.badge ? `<span class="badge-coral product-card__badge">${product.badge}</span>` : ''}
         </div>
         <div class="product-card__body">
