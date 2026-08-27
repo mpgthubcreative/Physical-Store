@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Order Detail — Buddy Patches Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="./css/admin.css">
+</head>
+<body>
+
+<div class="admin-shell">
+  <div id="admin-topbar"></div>
+  <main class="admin-main">
+    <div class="admin-page-head">
+      <h1>Order <span data-order-number>&mdash;</span></h1>
+      <a class="admin-btn admin-btn--ghost" href="orders.html">&larr; Back to orders</a>
+    </div>
+
+    <p class="admin-empty" data-order-loading>Loading…</p>
+
+    <div data-order-detail hidden>
+      <div class="admin-form-grid two-col">
+        <div class="admin-card">
+          <h2 class="admin-card__title">Customer</h2>
+          <p data-customer-name></p>
+          <p data-customer-email></p>
+          <p data-customer-mobile></p>
+          <p data-order-notes></p>
+        </div>
+        <div class="admin-card">
+          <h2 class="admin-card__title">Delivery</h2>
+          <p data-delivery-method></p>
+          <div data-delivery-address></div>
+        </div>
+      </div>
+
+      <div class="admin-card">
+        <h2 class="admin-card__title">Line items</h2>
+        <div data-detail-lines class="order-lines"></div>
+        <div class="order-totals">
+          <div class="checkout-summary__row"><span>Subtotal</span><span data-detail-subtotal>&mdash;</span></div>
+          <div class="checkout-summary__row"><span>Shipping</span><span data-detail-shipping>&mdash;</span></div>
+          <div class="checkout-summary__row checkout-summary__row--total"><span>Total</span><span data-detail-total>&mdash;</span></div>
+        </div>
+      </div>
+
+      <div class="admin-form-grid two-col">
+        <div class="admin-card">
+          <h2 class="admin-card__title">Payment</h2>
+          <p>Status: <span class="admin-badge" data-payment-status-badge>&mdash;</span></p>
+          <div data-payment-attempts></div>
+          <div data-payment-actions></div>
+        </div>
+        <div class="admin-card">
+          <h2 class="admin-card__title">Fulfillment</h2>
+          <p>Status: <span class="admin-badge" data-fulfillment-status-badge>&mdash;</span></p>
+          <div data-fulfillment-actions></div>
+        </div>
+      </div>
+
+      <div class="admin-card">
+        <h2 class="admin-card__title">Audit history</h2>
+        <div data-order-history></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="../js/order-preview.js"></script>
+<script type="module" src="./js/order-detail.js"></script>
+</body>
+</html>

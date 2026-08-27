@@ -126,7 +126,13 @@
         unitPrice: product.basePrice,
         qty,
         thumbColor: variant.hex,
-        customization: null,
+        customization: {
+          productId: product.id,
+          variantId: variant.id,
+          quantity: qty,
+          personalization: null,
+          patches: [],
+        },
       });
       window.BuddyCart.open();
     });

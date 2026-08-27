@@ -37,6 +37,7 @@
  *   BuddyCart.addItem({ key, name, subtitle, unitPrice, qty, thumbColor })
  *   BuddyCart.removeItem(key)
  *   BuddyCart.setQty(key, qty)
+ *   BuddyCart.clear() -> empties the cart (only call after a server-confirmed order)
  *   BuddyCart.getItems() -> array (copy)
  *   BuddyCart.getCount() -> number
  *   BuddyCart.getSubtotal() -> number
@@ -108,6 +109,14 @@
     notify();
   }
 
+  // Only ever called after the server has successfully created an order —
+  // never optimistically, so a failed/timed-out checkout leaves the cart
+  // intact for the customer to retry.
+  function clear() {
+    items = [];
+    notify();
+  }
+
   function setQty(key, qty) {
     const line = items.find((i) => i.key === key);
     if (!line) return;
@@ -158,6 +167,10 @@
 
     overlay.querySelectorAll('[data-cart-close]').forEach((el) => {
       el.addEventListener('click', close);
+    });
+    els.checkout.addEventListener('click', () => {
+      if (items.length === 0) return;
+      window.location.href = 'checkout.html';
     });
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') close();
@@ -212,6 +225,7 @@
     addItem,
     removeItem,
     setQty,
+    clear,
     getItems,
     getCount,
     getSubtotal,

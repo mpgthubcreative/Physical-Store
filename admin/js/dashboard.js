@@ -6,11 +6,16 @@ async function init() {
   await renderAdminShell('dashboard');
 
   try {
-    const [{ products }, { patches }, { collections }] = await Promise.all([
+    const [{ products }, { patches }, { collections }, orderStats] = await Promise.all([
       apiFetch('/api/admin-list-products'),
       apiFetch('/api/admin-list-patches'),
       apiFetch('/api/admin-list-collections'),
+      apiFetch('/api/admin-order-stats'),
     ]);
+
+    document.querySelector('[data-count-pending-review]').textContent = orderStats.pendingReviewCount;
+    document.querySelector('[data-count-paid-awaiting]').textContent = orderStats.paidAwaitingProcessingCount;
+    document.querySelector('[data-count-total-orders]').textContent = orderStats.totalOrdersCount;
 
     document.querySelector('[data-count-products]').textContent = products.length;
     document.querySelector('[data-count-patches]').textContent = patches.length;

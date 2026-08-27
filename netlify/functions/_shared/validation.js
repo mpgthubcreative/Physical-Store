@@ -56,6 +56,20 @@ function requireEmail(value, fieldName = 'Email') {
   return s.toLowerCase();
 }
 
+const MOBILE_RE = /^[0-9+()\-\s]{7,20}$/;
+function requireMobile(value, fieldName = 'Mobile number') {
+  const s = requireString(value, fieldName, { maxLength: 20 });
+  if (!MOBILE_RE.test(s)) throw new ValidationError(`${fieldName} must be a valid phone number.`);
+  return s;
+}
+
+function requireOneOf(value, fieldName, allowed) {
+  if (!allowed.includes(value)) {
+    throw new ValidationError(`${fieldName} must be one of: ${allowed.join(', ')}.`);
+  }
+  return value;
+}
+
 function slugify(input) {
   return String(input)
     .trim()
@@ -96,6 +110,8 @@ module.exports = {
   requirePercent,
   requireHex,
   requireEmail,
+  requireMobile,
+  requireOneOf,
   slugify,
   requireArray,
   requireNoDuplicates,

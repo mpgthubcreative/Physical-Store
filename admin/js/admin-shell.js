@@ -3,6 +3,7 @@ import { auth } from './firebase-init.js';
 
 const NAV_LINKS = [
   { key: 'dashboard', label: 'Dashboard', href: 'index.html' },
+  { key: 'orders', label: 'Orders', href: 'orders.html' },
   { key: 'products', label: 'Products', href: 'products.html' },
   { key: 'patches', label: 'Patches', href: 'patches.html' },
   { key: 'collections', label: 'Collections', href: 'collections.html' },

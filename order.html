@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your Order — Buddy Patches</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+
+<div id="site-nav"></div>
+
+<main>
+  <div class="container order-page" data-order-root>
+    <p class="future-page" data-order-loading>Loading your order…</p>
+
+    <div data-order-content hidden>
+      <p class="breadcrumb">Home / My Order</p>
+      <div class="order-page__head">
+        <h1 class="sec-heading">Order <span data-order-number>&mdash;</span></h1>
+        <span class="order-status-badge" data-order-status-badge>&mdash;</span>
+      </div>
+
+      <div data-order-lines class="order-lines"></div>
+
+      <div class="order-totals">
+        <div class="checkout-summary__row"><span>Subtotal</span><span data-order-subtotal>&mdash;</span></div>
+        <div class="checkout-summary__row"><span>Shipping</span><span data-order-shipping>&mdash;</span></div>
+        <div class="checkout-summary__row checkout-summary__row--total"><span>Total</span><span data-order-total>&mdash;</span></div>
+      </div>
+
+      <div data-payment-section class="payment-section"></div>
+    </div>
+  </div>
+</main>
+
+<div id="site-footer"></div>
+
+<script src="./js/cart.js"></script>
+<script src="./js/modal.js"></script>
+<script src="./js/nav.js"></script>
+<script src="./js/footer.js"></script>
+<script src="./js/order-preview.js"></script>
+<script src="./js/order.js"></script>
+</body>
+</html>
