@@ -42,6 +42,7 @@ function sanitizeOrderSummary(doc) {
     paymentStatus: order.paymentStatus,
     fulfillmentStatus: order.fulfillmentStatus,
     deliveryMethod: order.deliveryMethod,
+    isTest: order.isTest === true,
     createdAt: order.createdAt || null,
   };
 }

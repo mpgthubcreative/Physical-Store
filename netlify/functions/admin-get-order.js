@@ -58,13 +58,13 @@ exports.handler = withErrorHandling(async (event) => {
       fulfillmentStatus: order.fulfillmentStatus,
       paymentAttempts: order.paymentAttempts || [],
       history: order.history || [],
-      // Deliberately no `|| []` fallback here — `null` vs a genuinely empty
-      // array vs an absent field are three different diagnostic states, and
-      // masking that with a fallback is exactly what made an earlier bug
-      // investigation ambiguous.
-      referencedProductIds: order.referencedProductIds === undefined ? 'FIELD_ABSENT' : order.referencedProductIds,
-      referencedPatchIds: order.referencedPatchIds === undefined ? 'FIELD_ABSENT' : order.referencedPatchIds,
-      referencedImagePaths: order.referencedImagePaths === undefined ? 'FIELD_ABSENT' : order.referencedImagePaths,
+      // What this order currently protects from permanent deletion (see
+      // _shared/orderReferences.js) — genuinely useful context for an
+      // Owner/Admin who hits a 409 trying to delete a product/patch.
+      referencedProductIds: order.referencedProductIds || [],
+      referencedPatchIds: order.referencedPatchIds || [],
+      referencedImagePaths: order.referencedImagePaths || [],
+      isTest: order.isTest === true,
       createdAt: order.createdAt || null,
       updatedAt: order.updatedAt || null,
     },

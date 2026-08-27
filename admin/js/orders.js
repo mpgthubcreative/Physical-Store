@@ -34,7 +34,7 @@ function renderRows() {
     .map(
       (o) => `
     <tr data-order-id="${o.orderId}" style="cursor:pointer;">
-      <td>${o.orderNumber}</td>
+      <td>${o.orderNumber}${o.isTest ? ' <span class="admin-badge admin-badge--low">TEST</span>' : ''}</td>
       <td>${o.customerName}<br><span class="hint">${o.customerEmail}</span></td>
       <td>${fmtDate(o.createdAt)}</td>
       <td>${fmtMoney(o.total)}</td>

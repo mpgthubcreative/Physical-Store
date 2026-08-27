@@ -229,7 +229,7 @@ async function load() {
   document.querySelector('[data-order-loading]').hidden = true;
   document.querySelector('[data-order-detail]').hidden = false;
 
-  document.querySelector('[data-order-number]').textContent = order.orderNumber;
+  document.querySelector('[data-order-number]').textContent = order.orderNumber + (order.isTest ? ' (TEST)' : '');
   document.querySelector('[data-customer-name]').textContent = order.customerName;
   document.querySelector('[data-customer-email]').textContent = order.customerEmail;
   document.querySelector('[data-customer-mobile]').textContent = order.customerMobile;

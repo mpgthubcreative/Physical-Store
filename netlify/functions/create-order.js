@@ -155,6 +155,12 @@ exports.handler = withErrorHandling(async (event) => {
           referencedProductIds,
           referencedPatchIds,
           referencedImagePaths,
+          // Server-controlled, always false through this public endpoint —
+          // never read from the request body. There is no "create a test
+          // order" path through create-order.js; a future Owner-only tool
+          // that needs to create genuine test orders would set this true
+          // itself, server-side, the same way this sets it false.
+          isTest: false,
           pricing: { subtotal, shippingFee, total },
           paymentStatus: 'awaiting_payment',
           fulfillmentStatus: 'unfulfilled',
