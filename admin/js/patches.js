@@ -27,6 +27,7 @@ function openForm(patch) {
   form.name.value = patch?.name || '';
   form.hex.value = patch?.hex || '#F16861';
   form.price.value = patch?.price ?? 40;
+  form.stockQty.value = patch?.stockQty ?? 0;
   form.active.checked = patch ? patch.active !== false : true;
   form.displayWidthPct.value = patch?.displayWidthPct ?? 17;
   form.displayHeightPct.value = patch?.displayHeightPct ?? 17;
@@ -50,7 +51,7 @@ function closeForm() {
 function renderRows() {
   const tbody = document.querySelector('[data-patch-rows]');
   if (!patches.length) {
-    tbody.innerHTML = '<tr><td colspan="7" class="admin-empty">No patches yet — add your first one.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="admin-empty">No patches yet — add your first one.</td></tr>';
     return;
   }
   tbody.innerHTML = patches
@@ -60,6 +61,7 @@ function renderRows() {
       <td>${p.imageUrl ? `<img class="admin-thumb" src="${p.imageUrl}" alt="" />` : `<span class="admin-thumb" style="background:${p.hex};"></span>`}</td>
       <td>${p.name}</td>
       <td>₱${p.price}</td>
+      <td>${p.stockQty ?? 0}</td>
       <td>${p.displayWidthPct}×${p.displayHeightPct}</td>
       <td><span class="admin-badge ${p.active ? 'admin-badge--active' : 'admin-badge--inactive'}">${p.active ? 'Active' : 'Archived'}</span></td>
       <td>&mdash;</td>
@@ -120,6 +122,7 @@ form.addEventListener('submit', async (e) => {
       name: form.name.value,
       hex: form.hex.value,
       price: Number(form.price.value),
+      stockQty: Number(form.stockQty.value),
       active: form.active.checked,
       displayWidthPct: Number(form.displayWidthPct.value),
       displayHeightPct: Number(form.displayHeightPct.value),

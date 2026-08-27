@@ -31,6 +31,18 @@ const { requireString, requireNumber } = require('./validation');
 const MAX_LINES = 20;
 const MAX_QTY_PER_LINE = 20;
 
+/*
+ * A missing/non-numeric stockQty must be treated as ZERO available, never
+ * as "unlimited" — Number(undefined) is NaN, and every `NaN < demand`
+ * comparison is false, which would silently let every order through
+ * regardless of demand. This was caught live: patches created before
+ * stockQty existed on the schema have no such field at all.
+ */
+function safeStock(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : 0;
+}
+
 class CartInvalidError extends Error {
   constructor(reason, lineIndex, message) {
     super(message || reason);
@@ -139,13 +151,13 @@ async function resolveAndValidateCart(rawItems, dbArg) {
   for (const line of structuralLines) {
     const vKey = `${line.productId}::${line.variantId}`;
     const demand = variantDemand.get(vKey);
-    if (Number(line.variant.stockQty) < demand) {
+    if (safeStock(line.variant.stockQty) < demand) {
       throw new CartInvalidError('OUT_OF_STOCK', line.index, `Not enough stock for "${line.product.title} — ${line.variant.name}".`);
     }
   }
   for (const [patchId, demand] of patchDemand) {
     const patch = patchCache.get(patchId);
-    if (Number(patch.stockQty) < demand) {
+    if (safeStock(patch.stockQty) < demand) {
       throw new CartInvalidError('OUT_OF_STOCK', null, `Not enough stock for the patch "${patch.name}".`);
     }
   }

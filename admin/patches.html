@@ -37,6 +37,10 @@
             <input id="p-price" name="price" type="number" min="0" step="1" required />
           </div>
           <div class="admin-field">
+            <label for="p-stock">Stock <span class="hint">(physical patches on hand)</span></label>
+            <input id="p-stock" name="stockQty" type="number" min="0" step="1" required />
+          </div>
+          <div class="admin-field">
             <label for="p-active">Status</label>
             <label class="admin-checkbox"><input id="p-active" name="active" type="checkbox" checked /> Active</label>
           </div>
@@ -74,10 +78,10 @@
     <div class="admin-table-wrap">
       <table class="admin-table">
         <thead>
-          <tr><th></th><th>Name</th><th>Price</th><th>Size (W×H %)</th><th>Status</th><th>Used by</th><th></th></tr>
+          <tr><th></th><th>Name</th><th>Price</th><th>Stock</th><th>Size (W×H %)</th><th>Status</th><th>Used by</th><th></th></tr>
         </thead>
         <tbody data-patch-rows>
-          <tr><td colspan="7" class="admin-empty">Loading…</td></tr>
+          <tr><td colspan="8" class="admin-empty">Loading…</td></tr>
         </tbody>
       </table>
     </div>

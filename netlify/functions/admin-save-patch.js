@@ -22,6 +22,7 @@ exports.handler = withErrorHandling(async (event) => {
     description: optionalString(body.description, 'Description', { maxLength: 500 }),
     hex: requireHex(body.hex, 'Color'),
     price: requireNumber(body.price, 'Price', { min: 0 }),
+    stockQty: requireNumber(body.stockQty, 'Stock', { min: 0, integer: true }),
     displayWidthPct: requireNumber(body.displayWidthPct, 'Display width', { min: 1, max: 100 }),
     displayHeightPct: requireNumber(body.displayHeightPct, 'Display height', { min: 1, max: 100 }),
     image: optionalString(body.image, 'Image', { maxLength: 300 }),
