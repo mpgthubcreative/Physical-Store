@@ -35,10 +35,11 @@ service cloud.firestore {
       allow read: if isAdmin();
     }
 
-    // orders, inventoryReservations, adminUsers, and eventInquiries are
-    // fully server-only — no allow rule is added on purpose, same reasoning
-    // as Luna: covered entirely by the default-deny match above. Every
-    // access goes through a Netlify Function that independently re-checks
+    // orders, inventoryReservations, adminUsers, eventInquiries, and
+    // skuIndex (Phase 5B's global SKU-uniqueness index) are fully
+    // server-only — no allow rule is added on purpose, same reasoning as
+    // Luna: covered entirely by the default-deny match above. Every access
+    // goes through a Netlify Function that independently re-checks
     // requireAdmin()/requireOwner() (see netlify/functions/_shared/adminAuth.js)
     // or, for guest order lookup (a later phase), a hashed access token —
     // never a Firestore rule alone.

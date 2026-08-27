@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin Dashboard — Buddy Patches</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="./css/admin.css">
+</head>
+<body>
+
+<div class="admin-shell">
+  <div id="admin-topbar"></div>
+  <main class="admin-main">
+    <div class="admin-page-head">
+      <h1>Dashboard</h1>
+    </div>
+    <div class="admin-form-grid two-col" data-summary-grid>
+      <div class="admin-card"><div class="hint">Products</div><div style="font:700 28px var(--font-heading);" data-count-products>&mdash;</div></div>
+      <div class="admin-card"><div class="hint">Patches</div><div style="font:700 28px var(--font-heading);" data-count-patches>&mdash;</div></div>
+      <div class="admin-card"><div class="hint">Collections</div><div style="font:700 28px var(--font-heading);" data-count-collections>&mdash;</div></div>
+      <div class="admin-card"><div class="hint">Low stock variants</div><div style="font:700 28px var(--font-heading);" data-count-lowstock>&mdash;</div></div>
+    </div>
+    <p style="color:var(--ink-faint);font-size:14px;">Orders, payments, and fulfillment metrics arrive in a later phase — this dashboard covers catalog only for now.</p>
+  </main>
+</div>
+
+<script type="module" src="./js/dashboard.js"></script>
+</body>
+</html>

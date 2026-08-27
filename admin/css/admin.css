@@ -1,0 +1,97 @@
+/* Buddy Patches — Admin. Deliberately utilitarian (tables + forms), not a
+   branded redesign — reuses the storefront's tokens from css/style.css
+   (loaded before this file) for color/type consistency only. */
+
+body { background: var(--panel); }
+
+.admin-shell { min-height: 100vh; display: flex; flex-direction: column; }
+
+.admin-topbar {
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px clamp(16px, 4vw, 32px);
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.admin-topbar__brand { display: flex; align-items: center; gap: 12px; font: 700 18px var(--font-heading); color: var(--ink); }
+.admin-topbar__brand img { height: 34px; border-radius: 8px; }
+.admin-topbar__nav { display: flex; gap: clamp(10px, 2vw, 22px); flex-wrap: wrap; }
+.admin-topbar__nav a { font: 600 14px var(--font-body); color: var(--ink-muted); text-decoration: none; padding: 6px 2px; border-bottom: 2px solid transparent; }
+.admin-topbar__nav a.is-active, .admin-topbar__nav a:hover { color: var(--ink); border-bottom-color: var(--coral); }
+.admin-topbar__user { display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--ink-muted); }
+.admin-topbar__user button { border: none; background: none; color: var(--coral); font: 600 13px var(--font-body); cursor: pointer; }
+
+.admin-main { flex: 1; padding: clamp(18px, 3vw, 32px); max-width: 1200px; width: 100%; margin: 0 auto; box-sizing: border-box; }
+
+.admin-page-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+.admin-page-head h1 { font: 700 24px var(--font-heading); color: var(--ink); margin: 0; }
+
+.admin-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--coral); color: var(--white); border: none; border-radius: var(--radius-btn);
+  font: 700 14px var(--font-body); padding: 10px 18px; cursor: pointer;
+}
+.admin-btn:disabled { opacity: .5; cursor: not-allowed; }
+.admin-btn--ghost { background: var(--white); color: var(--ink); border: 1.5px solid var(--border); }
+.admin-btn--danger { background: #C0392B; }
+.admin-btn--small { padding: 6px 12px; font-size: 12.5px; }
+
+.admin-card { background: var(--white); border: 1px solid var(--border); border-radius: 14px; padding: clamp(14px, 2vw, 22px); margin-bottom: 20px; }
+
+.admin-table-wrap { overflow-x: auto; background: var(--white); border: 1px solid var(--border); border-radius: 14px; }
+.admin-table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 640px; }
+.admin-table th, .admin-table td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.admin-table th { font: 700 12px var(--font-body); text-transform: uppercase; letter-spacing: .04em; color: var(--ink-faint); background: var(--panel); }
+.admin-table tr:last-child td { border-bottom: none; }
+.admin-table td.wrap { white-space: normal; }
+.admin-thumb { width: 40px; height: 40px; border-radius: 8px; background: var(--panel); object-fit: cover; display: block; }
+
+.admin-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font: 700 11px var(--font-body); }
+.admin-badge--active { background: #E3F5E6; color: #1E7B34; }
+.admin-badge--inactive { background: #F1F1F1; color: #777; }
+.admin-badge--low { background: #FFF1E0; color: #B15E00; }
+
+.admin-form-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+@media (min-width: 720px) { .admin-form-grid.two-col { grid-template-columns: 1fr 1fr; } }
+
+.admin-field { display: flex; flex-direction: column; gap: 6px; }
+.admin-field label { font: 700 13px var(--font-body); color: var(--ink); }
+.admin-field .hint { font-weight: 500; color: var(--ink-faint); }
+.admin-field input, .admin-field select, .admin-field textarea {
+  border: 2px solid var(--border); border-radius: var(--radius-input); padding: 10px 12px;
+  font: 400 14px var(--font-body); color: var(--ink); box-sizing: border-box; width: 100%;
+}
+.admin-field input:focus, .admin-field select:focus, .admin-field textarea:focus { outline: none; border-color: var(--teal); }
+.admin-field textarea { min-height: 80px; resize: vertical; }
+.admin-checkbox { display: flex; align-items: center; gap: 8px; font: 600 14px var(--font-body); color: var(--ink); }
+
+.admin-variant-row, .admin-patch-pick-row {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)) auto; gap: 10px; align-items: end;
+  border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 10px; background: var(--panel);
+}
+
+.admin-patch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+.admin-patch-pick {
+  display: flex; align-items: center; gap: 8px; border: 2px solid var(--border); border-radius: 10px; padding: 8px 10px; cursor: pointer; background: var(--white);
+}
+.admin-patch-pick.is-checked { border-color: var(--coral); background: #FFF1F0; }
+.admin-patch-pick input { margin: 0; }
+.admin-patch-swatch { width: 20px; height: 20px; border-radius: 5px; flex: none; }
+
+.admin-note { font-size: 13px; margin: 10px 0 0; min-height: 1.2em; }
+.admin-note.is-error { color: var(--coral); }
+.admin-note.is-success { color: var(--teal); }
+
+.admin-empty { text-align: center; color: var(--ink-faint); padding: 40px 0; }
+
+.admin-image-slot { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.admin-image-slot img { width: 64px; height: 64px; border-radius: 10px; object-fit: cover; background: var(--panel); border: 1px solid var(--border); }
+.admin-image-slot input[type="file"] { font-size: 13px; }
+
+.admin-login-wrap { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.admin-login-card { width: 100%; max-width: 360px; background: var(--white); border: 1px solid var(--border); border-radius: 16px; padding: 32px; }
+.admin-login-card h1 { font: 700 22px var(--font-heading); color: var(--ink); margin: 0 0 4px; text-align: center; }
+.admin-login-card p.sub { text-align: center; color: var(--ink-muted); font-size: 13.5px; margin: 0 0 22px; }

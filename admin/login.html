@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin Login — Buddy Patches</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="./css/admin.css">
+</head>
+<body>
+
+<div class="admin-shell">
+  <div class="admin-login-wrap">
+    <div class="admin-login-card">
+      <h1>Buddy Patches</h1>
+      <p class="sub">Admin sign in</p>
+      <form data-login-form novalidate>
+        <div class="admin-field" style="margin-bottom:14px;">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" required autocomplete="username" />
+        </div>
+        <div class="admin-field" style="margin-bottom:18px;">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" required autocomplete="current-password" />
+        </div>
+        <button type="submit" class="admin-btn" style="width:100%;justify-content:center;">Sign in</button>
+        <p class="admin-note" data-login-note></p>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="./js/login.js"></script>
+</body>
+</html>

@@ -4,7 +4,8 @@
   "version": "1.0.0",
   "description": "Buddy Patches — static storefront + Netlify Functions backend",
   "scripts": {
-    "set-admin-claim": "node scripts/set-admin-claim.js"
+    "set-admin-claim": "node scripts/set-admin-claim.js",
+    "seed-catalog": "node scripts/seed-catalog.js"
   },
   "dependencies": {
     "firebase-admin": "^12.6.0"

@@ -1,44 +1,45 @@
 /**
- * BuddyProducts — static mock catalog for Phase 2.
+ * BuddyProducts — thin fetch adapter over the public /api/catalog function.
  *
- * The read shape (async getAll/getFeatured/getBySlug returning plain product
- * objects) is deliberately the same shape a Firestore-backed version would
- * return, so catalog.js/home.js never need to change when this module is
- * later swapped for real reads — only this file's internals change.
+ * Phase 2 built this module as a static mock specifically so it could be
+ * swapped for a real backend without touching home.js/catalog.js/product.js
+ * — this is that swap. The public shape (async getAll/getFeatured/getBySlug,
+ * sync highestPrice/format) is unchanged.
  */
 (function () {
-  const PRODUCTS = [
-    { id: 'pouch', slug: 'everyday-pouch', name: 'Everyday Pouch', price: 260, badge: null, inStock: true },
-    { id: 'bagtag', slug: 'bag-tag', name: 'Bag Tag', price: 120, badge: null, inStock: true },
-    { id: 'pencil', slug: 'pencil-case', name: 'Pencil Case', price: 320, badge: null, inStock: true },
-    { id: 'coin', slug: 'coin-purse', name: 'Coin Purse', price: 190, badge: null, inStock: true },
-    { id: 'box', slug: 'patch-box', name: 'Patch Box', price: 790, badge: 'COMBO', inStock: true, priceLabel: 'From ₱790.00' },
-    { id: 'tote', slug: 'mini-tote', name: 'Mini Tote', price: 340, badge: 'NEW', inStock: false },
-  ];
+  let cache = null; // the full active-product list for this page load
+
+  async function fetchAll() {
+    if (cache) return cache;
+    const res = await fetch('/api/catalog');
+    if (!res.ok) throw new Error('Failed to load catalog.');
+    const data = await res.json();
+    cache = data.products;
+    return cache;
+  }
 
   function fmt(n) {
     return '₱' + Number(n).toLocaleString('en-PH') + '.00';
   }
 
-  function withLabel(p) {
-    return { ...p, priceLabel: p.priceLabel || fmt(p.price) };
-  }
-
   async function getAll() {
-    return PRODUCTS.map(withLabel);
+    return fetchAll();
   }
 
   async function getFeatured(count) {
-    return PRODUCTS.slice(0, count || 5).map(withLabel);
+    const all = await fetchAll();
+    return all.filter((p) => p.featured).slice(0, count || 5);
   }
 
   async function getBySlug(slug) {
-    const found = PRODUCTS.find((p) => p.slug === slug);
-    return found ? withLabel(found) : null;
+    const all = await fetchAll();
+    return all.find((p) => p.slug === slug) || null;
   }
 
+  /** Sync by design — every call site awaits getAll()/getFeatured() first, so the cache is always already populated. */
   function highestPrice() {
-    return Math.max(...PRODUCTS.map((p) => p.price));
+    if (!cache || !cache.length) return 0;
+    return Math.max(...cache.map((p) => p.price));
   }
 
   window.BuddyProducts = { getAll, getFeatured, getBySlug, highestPrice, format: fmt };

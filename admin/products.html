@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Products — Buddy Patches Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="./css/admin.css">
+</head>
+<body>
+
+<div class="admin-shell">
+  <div id="admin-topbar"></div>
+  <main class="admin-main">
+    <div class="admin-page-head">
+      <h1>Products</h1>
+      <button type="button" class="admin-btn" data-new-product>+ New product</button>
+    </div>
+
+    <div class="admin-card" data-product-form-card hidden>
+      <h2 style="font:700 18px var(--font-heading);color:var(--ink);margin:0 0 16px;" data-form-title>New product</h2>
+      <form data-product-form novalidate>
+        <input type="hidden" name="id" />
+
+        <h3 style="font:700 14px var(--font-body);text-transform:uppercase;letter-spacing:.04em;color:var(--ink-faint);margin:0 0 12px;">Basics</h3>
+        <div class="admin-form-grid two-col">
+          <div class="admin-field">
+            <label for="pr-title">Title</label>
+            <input id="pr-title" name="title" required maxlength="120" />
+          </div>
+          <div class="admin-field">
+            <label for="pr-slug">Slug <span class="hint">(auto-filled from title if left blank)</span></label>
+            <input id="pr-slug" name="slug" maxlength="120" />
+          </div>
+          <div class="admin-field">
+            <label for="pr-price">Base price (₱)</label>
+            <input id="pr-price" name="basePrice" type="number" min="0" step="1" required />
+          </div>
+          <div class="admin-field">
+            <label for="pr-category">Category <span class="hint">(optional)</span></label>
+            <input id="pr-category" name="category" maxlength="60" />
+          </div>
+          <div class="admin-field">
+            <label for="pr-badge">Badge <span class="hint">(optional, e.g. NEW, COMBO)</span></label>
+            <input id="pr-badge" name="badge" maxlength="20" />
+          </div>
+          <div class="admin-field">
+            <label>Status</label>
+            <label class="admin-checkbox"><input name="active" type="checkbox" checked /> Active</label>
+            <label class="admin-checkbox"><input name="featured" type="checkbox" /> Featured</label>
+          </div>
+        </div>
+        <div class="admin-field" style="margin-top:16px;">
+          <label for="pr-desc">Description</label>
+          <textarea id="pr-desc" name="description" maxlength="2000"></textarea>
+        </div>
+
+        <div class="admin-field" style="margin-top:16px;">
+          <label>Thumbnail image</label>
+          <div class="admin-image-slot">
+            <img data-thumbnail-preview alt="" />
+            <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-thumbnail-input />
+            <button type="button" class="admin-btn admin-btn--ghost admin-btn--small" data-remove-thumbnail hidden>Remove</button>
+          </div>
+        </div>
+
+        <h3 style="font:700 14px var(--font-body);text-transform:uppercase;letter-spacing:.04em;color:var(--ink-faint);margin:24px 0 12px;">Collections</h3>
+        <div class="admin-patch-grid" data-collection-checkboxes></div>
+
+        <h3 style="font:700 14px var(--font-body);text-transform:uppercase;letter-spacing:.04em;color:var(--ink-faint);margin:24px 0 12px;">Variants</h3>
+        <div data-variant-rows></div>
+        <button type="button" class="admin-btn admin-btn--ghost admin-btn--small" data-add-variant>+ Add variant</button>
+
+        <h3 style="font:700 14px var(--font-body);text-transform:uppercase;letter-spacing:.04em;color:var(--ink-faint);margin:24px 0 12px;">Customization</h3>
+        <label class="admin-checkbox" style="margin-bottom:14px;"><input type="checkbox" data-customizable /> This product is customizable (live patch/name editor)</label>
+
+        <div data-customization-fields hidden>
+          <div class="admin-form-grid two-col">
+            <div class="admin-field"><label>Boundary top (%)</label><input type="number" min="0" max="100" data-boundary-top /></div>
+            <div class="admin-field"><label>Boundary left (%)</label><input type="number" min="0" max="100" data-boundary-left /></div>
+            <div class="admin-field"><label>Boundary width (%)</label><input type="number" min="0" max="100" data-boundary-width /></div>
+            <div class="admin-field"><label>Boundary height (%)</label><input type="number" min="0" max="100" data-boundary-height /></div>
+            <div class="admin-field"><label>Max patch instances</label><input type="number" min="0" max="50" data-max-patches /></div>
+          </div>
+
+          <label class="admin-checkbox" style="margin:16px 0 12px;"><input type="checkbox" data-allow-text /> Allow name / initials</label>
+          <div class="admin-form-grid two-col" data-text-fields hidden>
+            <div class="admin-field"><label>Max characters</label><input type="number" min="1" max="40" data-text-max-length /></div>
+            <div class="admin-field"><label>Price (₱)</label><input type="number" min="0" data-text-price /></div>
+            <div class="admin-field"><label>Text box width (%)</label><input type="number" min="1" max="100" data-text-box-width /></div>
+            <div class="admin-field"><label>Text box height (%)</label><input type="number" min="1" max="100" data-text-box-height /></div>
+          </div>
+
+          <div class="admin-field" style="margin-top:16px;">
+            <label>Available patches</label>
+            <div class="admin-patch-grid" data-patch-checkboxes></div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:24px;">
+          <button type="submit" class="admin-btn">Save product</button>
+          <button type="button" class="admin-btn admin-btn--ghost" data-cancel-form>Cancel</button>
+        </div>
+        <p class="admin-note" data-product-form-note></p>
+      </form>
+    </div>
+
+    <div class="admin-table-wrap">
+      <table class="admin-table">
+        <thead><tr><th></th><th>Title</th><th>Price</th><th>Variants</th><th>Stock</th><th>Status</th><th></th></tr></thead>
+        <tbody data-product-rows>
+          <tr><td colspan="7" class="admin-empty">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<template id="variant-row-template">
+  <div class="admin-variant-row" data-variant-row>
+    <div class="admin-field"><label>Variant ID</label><input data-v-id maxlength="60" /></div>
+    <div class="admin-field"><label>Name</label><input data-v-name maxlength="80" /></div>
+    <div class="admin-field"><label>Hex</label><input data-v-hex maxlength="7" placeholder="#38B2B3" /></div>
+    <div class="admin-field"><label>SKU</label><input data-v-sku maxlength="40" /></div>
+    <div class="admin-field"><label>Stock</label><input type="number" min="0" data-v-stock /></div>
+    <div class="admin-field"><label>Low-stock at</label><input type="number" min="0" data-v-low value="5" /></div>
+    <div class="admin-field">
+      <label class="admin-checkbox"><input type="checkbox" data-v-active checked /> Active</label>
+    </div>
+    <div class="admin-field">
+      <label>Stage image</label>
+      <div class="admin-image-slot">
+        <img data-v-image-preview alt="" style="width:36px;height:36px;" />
+        <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-v-image-input />
+      </div>
+    </div>
+    <button type="button" class="admin-btn admin-btn--danger admin-btn--small" data-remove-variant>Remove</button>
+  </div>
+</template>
+
+<script type="module" src="./js/products.js"></script>
+</body>
+</html>

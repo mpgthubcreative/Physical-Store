@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Patches — Buddy Patches Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="./css/admin.css">
+</head>
+<body>
+
+<div class="admin-shell">
+  <div id="admin-topbar"></div>
+  <main class="admin-main">
+    <div class="admin-page-head">
+      <h1>Patches</h1>
+      <button type="button" class="admin-btn" data-new-patch>+ New patch</button>
+    </div>
+
+    <div class="admin-card" data-patch-form-card hidden>
+      <h2 style="font:700 18px var(--font-heading);color:var(--ink);margin:0 0 16px;" data-form-title>New patch</h2>
+      <form data-patch-form novalidate>
+        <input type="hidden" name="id" />
+        <div class="admin-form-grid two-col">
+          <div class="admin-field">
+            <label for="p-name">Name</label>
+            <input id="p-name" name="name" required maxlength="60" />
+          </div>
+          <div class="admin-field">
+            <label for="p-hex">Color (hex)</label>
+            <input id="p-hex" name="hex" required placeholder="#F16861" maxlength="7" />
+          </div>
+          <div class="admin-field">
+            <label for="p-price">Price (₱)</label>
+            <input id="p-price" name="price" type="number" min="0" step="1" required />
+          </div>
+          <div class="admin-field">
+            <label for="p-active">Status</label>
+            <label class="admin-checkbox"><input id="p-active" name="active" type="checkbox" checked /> Active</label>
+          </div>
+          <div class="admin-field">
+            <label for="p-width">Display width <span class="hint">(% of customizer boundary)</span></label>
+            <input id="p-width" name="displayWidthPct" type="number" min="1" max="100" step="1" required />
+          </div>
+          <div class="admin-field">
+            <label for="p-height">Display height <span class="hint">(% of customizer boundary)</span></label>
+            <input id="p-height" name="displayHeightPct" type="number" min="1" max="100" step="1" required />
+          </div>
+        </div>
+        <div class="admin-field" style="margin-top:16px;">
+          <label for="p-desc">Description <span class="hint">(optional)</span></label>
+          <textarea id="p-desc" name="description" maxlength="500"></textarea>
+        </div>
+
+        <div class="admin-field" style="margin-top:16px;">
+          <label>Image</label>
+          <div class="admin-image-slot">
+            <img data-patch-image-preview alt="" />
+            <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-patch-image-input />
+            <button type="button" class="admin-btn admin-btn--ghost admin-btn--small" data-remove-patch-image hidden>Remove image</button>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:20px;">
+          <button type="submit" class="admin-btn">Save patch</button>
+          <button type="button" class="admin-btn admin-btn--ghost" data-cancel-form>Cancel</button>
+        </div>
+        <p class="admin-note" data-patch-form-note></p>
+      </form>
+    </div>
+
+    <div class="admin-table-wrap">
+      <table class="admin-table">
+        <thead>
+          <tr><th></th><th>Name</th><th>Price</th><th>Size (W×H %)</th><th>Status</th><th>Used by</th><th></th></tr>
+        </thead>
+        <tbody data-patch-rows>
+          <tr><td colspan="7" class="admin-empty">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<script type="module" src="./js/patches.js"></script>
+</body>
+</html>
