@@ -69,9 +69,11 @@ body { background: var(--panel); }
 .admin-checkbox { display: flex; align-items: center; gap: 8px; font: 600 14px var(--font-body); color: var(--ink); }
 
 .admin-variant-row, .admin-patch-pick-row {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)) auto; gap: 10px; align-items: end;
+  display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end;
   border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 10px; background: var(--panel);
 }
+.admin-variant-row .admin-field { flex: 1 1 110px; min-width: 110px; }
+.admin-variant-row [data-remove-variant] { flex: 0 0 auto; }
 
 .admin-patch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
 .admin-patch-pick {

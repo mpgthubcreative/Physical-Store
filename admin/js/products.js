@@ -153,8 +153,11 @@ function openForm(product) {
   renderCollectionCheckboxes(product?.collectionIds || []);
   renderPatchCheckboxes(product?.customizationConfig?.availablePatchIds || []);
 
-  (product?.variants || [{}]).forEach((v) => addVariantRow(product ? v : null));
-  if (!product) addVariantRow(null); // start a brand-new product with one blank variant row
+  if (product) {
+    (product.variants || []).forEach((v) => addVariantRow(v));
+  } else {
+    addVariantRow(null); // start a brand-new product with exactly one blank variant row
+  }
 
   const cfg = product?.customizationConfig;
   customizableCheckbox.checked = !!product?.customizable;
