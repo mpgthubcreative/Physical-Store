@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Product — Buddy Patches</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+
+<div id="site-nav"></div>
+
+<main>
+  <div class="container product-page">
+    <p class="breadcrumb">Home / Products / <span data-product-breadcrumb-name>&mdash;</span></p>
+
+    <div class="product-layout">
+      <div class="product-stage-col">
+        <div class="stage-wrapper">
+          <div class="stage" data-stage></div>
+          <button type="button" class="zoom-btn" data-zoom-btn aria-label="Zoom in on preview">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2C4A4A" stroke-width="2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"></circle><line x1="15.5" y1="15.5" x2="20" y2="20"></line><line x1="10.5" y1="7.5" x2="10.5" y2="13.5"></line><line x1="7.5" y1="10.5" x2="13.5" y2="10.5"></line></svg>
+          </button>
+          <span class="live-preview-tag">Live preview</span>
+        </div>
+        <div class="swatch-row swatch-row--stage" data-swatch-row-stage></div>
+      </div>
+
+      <div class="product-info">
+        <h1 class="product-name" data-product-name>&mdash;</h1>
+        <div class="product-price" data-product-price>&mdash;</div>
+        <p class="product-addon-note" data-addon-note>&nbsp;</p>
+
+        <div class="product-color-label">Color: <span data-color-name>&mdash;</span></div>
+        <div class="swatch-row" data-swatch-row-info></div>
+
+        <div class="field product-name-field">
+          <label for="pz-name">Add a name <span class="field-hint">(optional &middot; +&#8369;30 &middot; max 10)</span></label>
+          <input id="pz-name" type="text" data-name-input />
+        </div>
+
+        <div class="patch-field">
+          <label>Add patches <span class="field-hint" data-patch-hint></span></label>
+          <div class="patch-grid" data-patch-grid></div>
+        </div>
+
+        <div class="qty-addcart-row">
+          <div class="qty-stepper">
+            <button type="button" data-qty-dec aria-label="Decrease quantity">&minus;</button>
+            <span data-qty-val>1</span>
+            <button type="button" data-qty-inc aria-label="Increase quantity">+</button>
+          </div>
+          <button type="button" class="btn-coral product-add-btn" data-add-to-cart>Add to cart &middot; <span data-add-price>&mdash;</span></button>
+        </div>
+
+        <p class="product-description" data-product-description></p>
+      </div>
+    </div>
+  </div>
+
+  <section class="section-panel also-like-section">
+    <div class="container">
+      <h3 class="sec-heading also-like-heading">You May Also Like</h3>
+      <div class="product-grid" data-also-like-grid></div>
+    </div>
+  </section>
+</main>
+
+<div id="site-footer"></div>
+
+<script src="./js/cart.js"></script>
+<script src="./js/modal.js"></script>
+<script src="./js/nav.js"></script>
+<script src="./js/footer.js"></script>
+<script src="./js/products-data.js"></script>
+<script src="./js/product-card.js"></script>
+<script src="./js/product-detail-data.js"></script>
+<script src="./js/customizer.js"></script>
+<script src="./js/product.js"></script>
+</body>
+</html>

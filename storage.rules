@@ -1,0 +1,32 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Public, read-only storefront images — product photos, patch photos,
+    // collection banners. All writes happen through Netlify Functions using
+    // the Admin SDK, which bypasses these rules entirely — no client
+    // (admin or customer) ever writes here directly.
+    match /product-images/{allPaths=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /patch-images/{allPaths=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /collection-images/{allPaths=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Buddy sells physical goods — there is intentionally no private
+    // "paid-products" / digital-delivery path here (unlike Luna Shop).
+    // Everything this store stocks is a public product photo.
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

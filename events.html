@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Events &amp; Parties — Buddy Patches</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+
+<div id="site-nav"></div>
+
+<main>
+  <section class="hero hero--events">
+    <div class="hero__scrim"></div>
+    <div class="hero__inner">
+      <div class="hero__copy hero__copy--wide">
+        <h1>Live Tote &amp; Patch Booths for Weddings, Birthdays &amp; Corporate Events</h1>
+        <p>A unique souvenir experience your guests will enjoy and remember.</p>
+        <a href="#booking" class="btn-coral">Get a Quote</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="container events-gallery">
+    <div class="gallery-grid">
+      <div class="gallery-item">Event photo 1</div>
+      <div class="gallery-item">Event photo 2</div>
+      <div class="gallery-item">Event photo 3</div>
+    </div>
+  </section>
+
+  <section class="section-panel booking-section" id="booking">
+    <div class="container booking-grid">
+      <div class="booking-intro">
+        <h2 class="sec-heading">Book Your Event</h2>
+        <p>Planning a wedding, birthday, or corporate event? Send us your details and our team will get back to you shortly.</p>
+        <span class="future-feature">Full Event Packages &amp; Rates guide &mdash; coming soon</span>
+      </div>
+      <div class="booking-card">
+        <form data-booking-form novalidate>
+          <div class="field-row">
+            <div class="field">
+              <label for="ev-name">Name</label>
+              <input type="text" id="ev-name" name="name" required />
+            </div>
+            <div class="field">
+              <label for="ev-email">Email *</label>
+              <input type="email" id="ev-email" name="email" required />
+            </div>
+          </div>
+          <div class="field">
+            <label for="ev-phone">Phone number</label>
+            <input type="tel" id="ev-phone" name="phone" />
+          </div>
+          <div class="field">
+            <label for="ev-comment">Comment</label>
+            <textarea id="ev-comment" name="comment"></textarea>
+          </div>
+          <button type="submit" class="btn-coral btn-block">Send</button>
+          <p class="form-note" data-form-note></p>
+        </form>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="site-footer"></div>
+
+<script src="./js/cart.js"></script>
+<script src="./js/modal.js"></script>
+<script src="./js/nav.js"></script>
+<script src="./js/footer.js"></script>
+<script src="./js/events.js"></script>
+</body>
+</html>

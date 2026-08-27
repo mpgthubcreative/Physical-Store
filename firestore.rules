@@ -1,0 +1,46 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null && request.auth.token.admin == true;
+    }
+
+    // Deny everything by default. Every mutation — for orders, products,
+    // patches, and inventory alike — happens through Netlify Functions using
+    // the Firebase Admin SDK, which bypasses these rules entirely. Customers
+    // never talk to Firestore directly, and neither does the admin
+    // dashboard for writes. This mirrors Luna Shop's proven rule structure.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Public catalog reads (products, patches, collections) are NOT opened
+    // to unauthenticated clients here. The storefront reads catalog data
+    // through a Netlify Function (Phase 5B — same shape as Luna's
+    // catalog.js), which lets us keep Firestore fully server-mediated and
+    // add response caching at the CDN layer without touching security
+    // rules. These allow-if-admin rules exist only as defense-in-depth for
+    // the admin dashboard, in case it ever reads directly via the client
+    // SDK instead of through an admin-* function.
+    match /products/{productId} {
+      allow read: if isAdmin();
+    }
+
+    match /patches/{patchId} {
+      allow read: if isAdmin();
+    }
+
+    match /collections/{collectionId} {
+      allow read: if isAdmin();
+    }
+
+    // orders, inventoryReservations, adminUsers, and eventInquiries are
+    // fully server-only — no allow rule is added on purpose, same reasoning
+    // as Luna: covered entirely by the default-deny match above. Every
+    // access goes through a Netlify Function that independently re-checks
+    // requireAdmin()/requireOwner() (see netlify/functions/_shared/adminAuth.js)
+    // or, for guest order lookup (a later phase), a hashed access token —
+    // never a Firestore rule alone.
+  }
+}

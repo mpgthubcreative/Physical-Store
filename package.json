@@ -1,0 +1,12 @@
+{
+  "name": "buddy-patches",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Buddy Patches — static storefront + Netlify Functions backend",
+  "scripts": {
+    "set-admin-claim": "node scripts/set-admin-claim.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.6.0"
+  }
+}

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contact — Buddy Patches</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+
+<div id="site-nav"></div>
+
+<main>
+  <div class="container contact-page">
+    <h1 class="sec-heading contact-page__heading">Get in touch</h1>
+    <p class="contact-page__intro">Questions about an order, a custom patch, or a bulk request? We'd love to hear from you.</p>
+
+    <div class="contact-layout">
+      <div class="contact-card">
+        <form data-contact-form novalidate>
+          <div class="field-row">
+            <div class="field">
+              <label for="ct-name">Name</label>
+              <input type="text" id="ct-name" name="name" required />
+            </div>
+            <div class="field">
+              <label for="ct-email">Email</label>
+              <input type="email" id="ct-email" name="email" required />
+            </div>
+          </div>
+          <div class="field">
+            <label for="ct-message">Message</label>
+            <textarea id="ct-message" name="message" required></textarea>
+          </div>
+          <button type="submit" class="btn-coral">Send message</button>
+          <p class="form-note" data-form-note></p>
+        </form>
+      </div>
+
+      <div class="contact-details">
+        <div class="contact-info-block">
+          <div class="label">Email</div>
+          <div class="value">hello@buddypatches.ph</div>
+        </div>
+        <div class="contact-info-block">
+          <div class="label">Studio hours</div>
+          <div class="value">Mon&ndash;Sat &middot; 9:00 AM &ndash; 6:00 PM</div>
+        </div>
+        <div class="contact-info-block">
+          <div class="label">Location</div>
+          <div class="value">Metro Manila, Philippines<br />Nationwide shipping</div>
+        </div>
+        <div class="social-row">
+          <span class="social-dot social-dot--teal"></span>
+          <span class="social-dot social-dot--coral"></span>
+          <span class="social-dot social-dot--mint"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div id="site-footer"></div>
+
+<script src="./js/cart.js"></script>
+<script src="./js/modal.js"></script>
+<script src="./js/nav.js"></script>
+<script src="./js/footer.js"></script>
+<script src="./js/contact.js"></script>
+</body>
+</html>

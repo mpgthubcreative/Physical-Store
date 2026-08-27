@@ -1,0 +1,19 @@
+[build]
+  publish = "."
+
+[functions]
+  directory = "netlify/functions"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+# Deliberately no custom Cache-Control headers for static CSS/JS here.
+# Filenames are stable (css/style.css, js/cart.js, ...) — nothing is
+# fingerprinted/hashed per deploy — so Netlify's own default static-asset
+# behavior (public, max-age=0, must-revalidate + ETag) is the safe choice:
+# the browser always revalidates, so a fix ships on the very next request.

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shop — Buddy Patches</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+
+<div id="site-nav"></div>
+
+<main>
+  <div class="container catalog-page">
+    <p class="breadcrumb">Home / Collections</p>
+    <h1 class="sec-heading catalog-page__heading">Collection: Products</h1>
+
+    <div class="catalog-layout">
+      <aside class="filter-panel" data-filter-panel>
+        <div class="filter-panel__head">
+          <span>Filter</span>
+          <a href="#" data-filter-reset>Reset</a>
+        </div>
+        <div class="filter-group-label">Availability</div>
+        <label class="filter-checkbox">
+          <input type="checkbox" checked data-filter-instock />
+          In stock
+        </label>
+        <label class="filter-checkbox">
+          <input type="checkbox" checked data-filter-oos />
+          Out of stock
+        </label>
+        <div class="filter-divider"></div>
+        <div class="filter-group-label">Price</div>
+        <p class="filter-hint">Highest price is <span data-highest-price>&mdash;</span></p>
+        <div class="price-range">
+          <input type="number" min="0" placeholder="&#8369; From" data-price-from />
+          <input type="number" min="0" placeholder="&#8369; To" data-price-to />
+        </div>
+      </aside>
+
+      <div class="catalog-results">
+        <div class="catalog-toolbar">
+          <span class="catalog-count" data-catalog-count>&nbsp;</span>
+          <button type="button" class="filter-toggle-btn" data-filter-toggle>Filter &#8859;</button>
+          <select class="sort-select" data-sort-select>
+            <option value="featured">Featured</option>
+            <option value="price-asc">Price: low to high</option>
+            <option value="price-desc">Price: high to low</option>
+            <option value="name-asc">Name: A&ndash;Z</option>
+          </select>
+        </div>
+        <div class="catalog-grid" data-catalog-grid></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div id="site-footer"></div>
+
+<script src="./js/cart.js"></script>
+<script src="./js/modal.js"></script>
+<script src="./js/nav.js"></script>
+<script src="./js/footer.js"></script>
+<script src="./js/products-data.js"></script>
+<script src="./js/product-card.js"></script>
+<script src="./js/catalog.js"></script>
+</body>
+</html>
