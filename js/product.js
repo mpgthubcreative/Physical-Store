@@ -303,7 +303,11 @@
     document.querySelector('[data-product-name]').textContent = product.name;
     document.querySelector('[data-product-description]').textContent = product.description;
 
-    if (product.customizable && product.customizationConfig) {
+    // catalog.js only ever includes customizationConfig when the product is
+    // customizable (it omits the field entirely otherwise) — that presence
+    // is the single source of truth here, not a separate boolean field the
+    // API doesn't actually send.
+    if (product.customizationConfig) {
       initCustomizableProduct(product);
     } else {
       initSimpleProduct(product);
