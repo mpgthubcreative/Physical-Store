@@ -4,6 +4,12 @@
 
 body { background: var(--panel); }
 
+/* The native [hidden] attribute is only display:none by default via the
+   UA stylesheet — any author rule of equal specificity (e.g. a plain
+   .admin-btn { display: inline-flex; }) wins over it in source order and
+   silently defeats `el.hidden = true`. Force it everywhere, once. */
+[hidden] { display: none !important; }
+
 .admin-shell { min-height: 100vh; display: flex; flex-direction: column; }
 
 .admin-topbar {

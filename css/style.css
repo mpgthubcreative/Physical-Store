@@ -42,6 +42,12 @@ html, body {
   padding: 0;
 }
 
+/* The native [hidden] attribute is only display:none via the UA
+   stylesheet — any author rule of equal specificity (e.g. a plain class
+   setting display:flex/inline-flex on the same element) wins over it in
+   source order and silently defeats `el.hidden = true`. Force it globally. */
+[hidden] { display: none !important; }
+
 body {
   background: var(--white);
   font-family: var(--font-body);
