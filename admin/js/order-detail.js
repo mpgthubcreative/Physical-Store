@@ -19,6 +19,8 @@ const FULFILLMENT_BADGE = {
   shipped: 'admin-badge--low',
   completed: 'admin-badge--active',
 };
+const INVENTORY_LABELS = { reserved: 'Reserved', locked: 'Inventory locked', consumed: 'Consumed', expired: 'Reservation expired' };
+const INVENTORY_BADGE = { reserved: 'admin-badge--low', locked: 'admin-badge--low', consumed: 'admin-badge--active', expired: 'admin-badge--inactive' };
 const REJECTION_LABELS = {
   REFERENCE_NOT_FOUND: 'Reference not found',
   AMOUNT_MISMATCH: 'Amount mismatch',
@@ -255,6 +257,10 @@ async function load() {
   const fulfillmentBadgeEl = document.querySelector('[data-fulfillment-status-badge]');
   fulfillmentBadgeEl.textContent = FULFILLMENT_LABELS[order.fulfillmentStatus] || order.fulfillmentStatus;
   fulfillmentBadgeEl.className = 'admin-badge ' + (FULFILLMENT_BADGE[order.fulfillmentStatus] || '');
+
+  const inventoryBadgeEl = document.querySelector('[data-inventory-status-badge]');
+  inventoryBadgeEl.textContent = order.inventoryStatus ? (INVENTORY_LABELS[order.inventoryStatus] || order.inventoryStatus) : 'N/A (legacy test order)';
+  inventoryBadgeEl.className = 'admin-badge ' + (order.inventoryStatus ? INVENTORY_BADGE[order.inventoryStatus] || '' : 'admin-badge--inactive');
 
   renderPaymentAttempts();
   renderPaymentActions();

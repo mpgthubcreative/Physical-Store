@@ -17,12 +17,26 @@
  * without the status-transition guard alone (which only protects against a
  * second, genuinely different submission arriving while one is already
  * pending_review).
+ *
+ * Phase 5D: before accepting a submission, the order's reservation must
+ * still be `active` and unexpired. If its TTL already passed, it's
+ * lazily expired right here (inventory released, order.inventoryStatus set
+ * to `expired`) and the submission is rejected — the customer must
+ * re-reserve (POST /api/reserve-order) before they're shown usable payment
+ * controls again. On success the reservation is locked (active -> locked),
+ * which also clears its automatic expiration: once a customer may actually
+ * have transferred money, inventory must not silently return to stock
+ * merely because Admin review is delayed. Legacy isTest orders (created
+ * before Phase 5D) have no reservation document at all and bypass every
+ * bit of this — never a general-purpose bypass, only for that explicitly
+ * pre-existing, server-marked legacy data.
  */
 const { admin, getDb } = require('./_shared/firebaseAdmin');
-const { withErrorHandling, ok, fail } = require('./_shared/response');
+const { withErrorHandling, ok, fail, json } = require('./_shared/response');
 const { requireString } = require('./_shared/validation');
 const { isValidAccessToken, isValidIdempotencyKey, hashToken, hashesMatch } = require('./_shared/orderSecurity');
 const { getPaymentSettings, sanitizePaymentMethodsForCustomer } = require('./_shared/settings');
+const { expireReservationIfDue, lockReservation } = require('./_shared/inventory');
 
 const RESUBMIT_ALLOWED_FROM = ['awaiting_payment', 'rejected'];
 
@@ -66,6 +80,28 @@ exports.handler = withErrorHandling(async (event) => {
       return { ok: false, status: 400, error: `Cannot submit payment — order is currently "${order.paymentStatus}".` };
     }
 
+    let lockPatch = null;
+    if (order.isTest !== true) {
+      const reservationRef = db.collection('inventoryReservations').doc(doc.id);
+      const { reservation, expiredNow, orderPatch } = await expireReservationIfDue(tx, db, reservationRef, { actorType: 'customer' });
+      if (expiredNow || reservation.status !== 'active') {
+        if (expiredNow) {
+          tx.update(doc.ref, {
+            inventoryStatus: orderPatch.inventoryStatus,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            history: admin.firestore.FieldValue.arrayUnion(orderPatch.historyEntry),
+          });
+        }
+        return {
+          ok: false,
+          status: 409,
+          error: 'Your reservation for this order has expired. Please try to reserve again before submitting payment.',
+          reservationExpired: true,
+        };
+      }
+      lockPatch = lockReservation(tx, reservationRef, { actorType: 'customer' }).orderPatch;
+    }
+
     const now = admin.firestore.Timestamp.now();
     const newAttempt = {
       attemptId,
@@ -80,22 +116,30 @@ exports.handler = withErrorHandling(async (event) => {
       rejectionNote: null,
     };
 
+    const paymentHistoryEntry = {
+      action: 'payment_submitted',
+      at: now,
+      actorType: 'customer',
+      actorId: null,
+      meta: { previousStatus: order.paymentStatus, newStatus: 'pending_review' },
+    };
+
     tx.update(doc.ref, {
       paymentAttempts: admin.firestore.FieldValue.arrayUnion(newAttempt),
       paymentStatus: 'pending_review',
+      ...(lockPatch ? { inventoryStatus: lockPatch.inventoryStatus } : {}),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      history: admin.firestore.FieldValue.arrayUnion({
-        action: 'payment_submitted',
-        at: now,
-        actorType: 'customer',
-        actorId: null,
-        meta: { previousStatus: order.paymentStatus, newStatus: 'pending_review' },
-      }),
+      history: lockPatch
+        ? admin.firestore.FieldValue.arrayUnion(paymentHistoryEntry, lockPatch.historyEntry)
+        : admin.firestore.FieldValue.arrayUnion(paymentHistoryEntry),
     });
 
     return { ok: true, alreadyProcessed: false, paymentStatus: 'pending_review' };
   });
 
-  if (!result.ok) return fail(result.status, result.error);
+  if (!result.ok) {
+    if (result.reservationExpired) return json(result.status, { error: result.error, reservationExpired: true });
+    return fail(result.status, result.error);
+  }
   return ok({ paymentStatus: result.paymentStatus, alreadyProcessed: result.alreadyProcessed });
 });

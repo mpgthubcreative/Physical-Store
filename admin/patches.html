@@ -39,6 +39,7 @@
           <div class="admin-field">
             <label for="p-stock">Stock <span class="hint">(physical patches on hand)</span></label>
             <input id="p-stock" name="stockQty" type="number" min="0" step="1" required />
+            <span class="hint" data-patch-reserved-hint></span>
           </div>
           <div class="admin-field">
             <label for="p-active">Status</label>
@@ -56,6 +57,11 @@
         <div class="admin-field" style="margin-top:16px;">
           <label for="p-desc">Description <span class="hint">(optional)</span></label>
           <textarea id="p-desc" name="description" maxlength="500"></textarea>
+        </div>
+
+        <div class="admin-field" style="margin-top:16px;" data-patch-adjustment-reason-field hidden>
+          <label for="p-adjustment-reason">Reason for stock change <span class="hint">(required — you changed the stock quantity)</span></label>
+          <input id="p-adjustment-reason" name="stockAdjustmentReason" maxlength="300" />
         </div>
 
         <div class="admin-field" style="margin-top:16px;">
@@ -78,10 +84,10 @@
     <div class="admin-table-wrap">
       <table class="admin-table">
         <thead>
-          <tr><th></th><th>Name</th><th>Price</th><th>Stock</th><th>Size (W×H %)</th><th>Status</th><th>Used by</th><th></th></tr>
+          <tr><th></th><th>Name</th><th>Price</th><th>Stock</th><th>Reserved</th><th>Size (W×H %)</th><th>Status</th><th>Used by</th><th></th></tr>
         </thead>
         <tbody data-patch-rows>
-          <tr><td colspan="8" class="admin-empty">Loading…</td></tr>
+          <tr><td colspan="9" class="admin-empty">Loading…</td></tr>
         </tbody>
       </table>
     </div>

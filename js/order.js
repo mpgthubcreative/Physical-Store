@@ -105,6 +105,45 @@
       section.appendChild(p);
     }
 
+    if (order.inventoryStatus === 'expired') {
+      const p = document.createElement('p');
+      p.className = 'order-status-msg is-error';
+      p.textContent = 'Your reservation for this order has expired, so we can no longer guarantee the items in it. Try to reserve again before paying.';
+      section.appendChild(p);
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn-coral';
+      btn.textContent = 'Try to reserve again';
+      const resultMsg = document.createElement('p');
+      resultMsg.className = 'form-note is-error';
+      section.appendChild(btn);
+      section.appendChild(resultMsg);
+
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        resultMsg.textContent = '';
+        try {
+          const res = await fetch('/api/reserve-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token }),
+          });
+          const result = await res.json();
+          if (!res.ok) {
+            resultMsg.textContent = result.message || result.error || 'Still unavailable. Please try again later.';
+            btn.disabled = false;
+            return;
+          }
+          onUpdated();
+        } catch (err) {
+          resultMsg.textContent = 'Network error — please try again.';
+          btn.disabled = false;
+        }
+      });
+      return;
+    }
+
     if (!paymentMethods.length) {
       const p = document.createElement('p');
       p.className = 'order-status-msg';

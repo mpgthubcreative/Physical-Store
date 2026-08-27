@@ -27,6 +27,7 @@ exports.handler = withErrorHandling(async (event) => {
       thumbnailUrl: publicUrl(d.thumbnail),
       variantCount: (d.variants || []).length,
       totalStock: (d.variants || []).reduce((sum, v) => sum + (v.stockQty || 0), 0),
+      totalReserved: (d.variants || []).reduce((sum, v) => sum + (v.reservedQty || 0), 0),
     };
   });
 

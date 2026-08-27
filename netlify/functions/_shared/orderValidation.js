@@ -18,30 +18,19 @@
  *            could pass while the combined cart oversells.
  *
  * This performs plain (non-transactional) reads — same as Luna's proven
- * create-order.js. Wrapping this in the order-creation transaction would
- * add no real protection against overselling in Phase 5C (nothing writes
- * to stockQty yet — that's Phase 5D's reservation system), so the
- * simplicity of a read-then-transact flow is preferred, matching Luna's
- * precedent. The residual race window between this read and the order
- * write is an explicitly accepted Phase 5C limitation.
+ * create-order.js. This is a cheap PRE-check that gives per-line error
+ * messages; the AUTHORITATIVE, race-safe check happens inside
+ * create-order.js's transaction via _shared/inventory.js's reserveInventory
+ * (Phase 5D). A cart that passes this check can still be rejected by the
+ * transaction if another order claimed the last unit in between — that
+ * residual race window is closed by the transaction, not by this function.
  */
 const { getDb } = require('./firebaseAdmin');
 const { requireString, requireNumber } = require('./validation');
+const { safeQty, safeReservedQty, aggregateDemandFromLines, resourcesFromDemand } = require('./inventory');
 
 const MAX_LINES = 20;
 const MAX_QTY_PER_LINE = 20;
-
-/*
- * A missing/non-numeric stockQty must be treated as ZERO available, never
- * as "unlimited" — Number(undefined) is NaN, and every `NaN < demand`
- * comparison is false, which would silently let every order through
- * regardless of demand. This was caught live: patches created before
- * stockQty existed on the schema have no such field at all.
- */
-function safeStock(value) {
-  const n = Number(value);
-  return Number.isFinite(n) ? n : 0;
-}
 
 class CartInvalidError extends Error {
   constructor(reason, lineIndex, message) {
@@ -147,17 +136,24 @@ async function resolveAndValidateCart(rawItems, dbArg) {
     structuralLines.push({ index: i, productId, variantId, quantity, product, variant, personalization, patchInstances });
   }
 
-  // ---- Pass 2: aggregate stock validation (whole-cart totals, not per-line) ----
+  // ---- Pass 2: aggregate availability validation (whole-cart totals, not per-line) ----
+  // availableQty = stockQty - reservedQty, never raw stockQty — a variant
+  // can be fully in stock yet fully spoken for by other customers' active
+  // reservations (Phase 5D). This is a fast pre-check only; the
+  // transactional reservation in create-order.js is what's actually
+  // race-safe against concurrent orders.
   for (const line of structuralLines) {
     const vKey = `${line.productId}::${line.variantId}`;
     const demand = variantDemand.get(vKey);
-    if (safeStock(line.variant.stockQty) < demand) {
+    const available = safeQty(line.variant.stockQty) - safeReservedQty(line.variant);
+    if (available < demand) {
       throw new CartInvalidError('OUT_OF_STOCK', line.index, `Not enough stock for "${line.product.title} — ${line.variant.name}".`);
     }
   }
   for (const [patchId, demand] of patchDemand) {
     const patch = patchCache.get(patchId);
-    if (safeStock(patch.stockQty) < demand) {
+    const available = safeQty(patch.stockQty) - safeReservedQty(patch);
+    if (available < demand) {
       throw new CartInvalidError('OUT_OF_STOCK', null, `Not enough stock for the patch "${patch.name}".`);
     }
   }
@@ -166,7 +162,14 @@ async function resolveAndValidateCart(rawItems, dbArg) {
   const lines = structuralLines.map(buildLineSnapshot);
   const subtotal = lines.reduce((sum, l) => sum + l.pricing.lineTotal, 0);
 
-  return { lines, subtotal };
+  // Recomputed from the final `lines` (not the pass-1 maps above) so the
+  // resources handed to create-order.js's reservation transaction are
+  // guaranteed to match exactly what gets stored as order.items — the same
+  // aggregation re-reservation later replays directly against order.items.
+  const { variantDemand: finalVariantDemand, patchDemand: finalPatchDemand } = aggregateDemandFromLines(lines);
+  const resources = resourcesFromDemand(finalVariantDemand, finalPatchDemand);
+
+  return { lines, subtotal, resources };
 }
 
 function buildLineSnapshot(line) {

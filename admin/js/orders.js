@@ -13,6 +13,9 @@ const FULFILLMENT_LABELS = {
   shipped: 'Shipped',
   completed: 'Completed',
 };
+// Only surfaced when it needs attention — 'reserved'/'consumed' are the
+// unremarkable steady states, so no badge is shown for those.
+const INVENTORY_BADGE = { locked: 'Inventory locked', expired: 'Reservation expired' };
 
 function fmtDate(v) {
   if (!v) return '—';
@@ -38,7 +41,7 @@ function renderRows() {
       <td>${o.customerName}<br><span class="hint">${o.customerEmail}</span></td>
       <td>${fmtDate(o.createdAt)}</td>
       <td>${fmtMoney(o.total)}</td>
-      <td><span class="admin-badge ${PAYMENT_BADGE[o.paymentStatus] || ''}">${PAYMENT_LABELS[o.paymentStatus] || o.paymentStatus}</span></td>
+      <td><span class="admin-badge ${PAYMENT_BADGE[o.paymentStatus] || ''}">${PAYMENT_LABELS[o.paymentStatus] || o.paymentStatus}</span>${INVENTORY_BADGE[o.inventoryStatus] ? ' <span class="admin-badge admin-badge--low">' + INVENTORY_BADGE[o.inventoryStatus] + '</span>' : ''}</td>
       <td>${FULFILLMENT_LABELS[o.fulfillmentStatus] || o.fulfillmentStatus}</td>
       <td><a class="admin-btn admin-btn--ghost admin-btn--small" href="order-detail.html?id=${o.orderId}">View</a></td>
     </tr>`

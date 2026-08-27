@@ -99,6 +99,11 @@
           </div>
         </div>
 
+        <div class="admin-field" style="margin-top:16px;" data-adjustment-reason-field hidden>
+          <label for="pr-adjustment-reason">Reason for stock change <span class="hint">(required — you changed a variant's stock quantity)</span></label>
+          <input id="pr-adjustment-reason" name="stockAdjustmentReason" maxlength="300" />
+        </div>
+
         <div style="display:flex;gap:10px;margin-top:24px;">
           <button type="submit" class="admin-btn">Save product</button>
           <button type="button" class="admin-btn admin-btn--ghost" data-cancel-form>Cancel</button>
@@ -109,9 +114,9 @@
 
     <div class="admin-table-wrap">
       <table class="admin-table">
-        <thead><tr><th></th><th>Title</th><th>Price</th><th>Variants</th><th>Stock</th><th>Status</th><th></th></tr></thead>
+        <thead><tr><th></th><th>Title</th><th>Price</th><th>Variants</th><th>Stock</th><th>Reserved</th><th>Status</th><th></th></tr></thead>
         <tbody data-product-rows>
-          <tr><td colspan="7" class="admin-empty">Loading…</td></tr>
+          <tr><td colspan="8" class="admin-empty">Loading…</td></tr>
         </tbody>
       </table>
     </div>
@@ -124,7 +129,7 @@
     <div class="admin-field"><label>Name</label><input data-v-name maxlength="80" /></div>
     <div class="admin-field"><label>Hex</label><input data-v-hex maxlength="7" placeholder="#38B2B3" /></div>
     <div class="admin-field"><label>SKU</label><input data-v-sku maxlength="40" /></div>
-    <div class="admin-field"><label>Stock</label><input type="number" min="0" data-v-stock /></div>
+    <div class="admin-field"><label>Stock</label><input type="number" min="0" data-v-stock /><span class="hint" data-v-reserved-hint></span></div>
     <div class="admin-field"><label>Low-stock at</label><input type="number" min="0" data-v-low value="5" /></div>
     <div class="admin-field">
       <label class="admin-checkbox"><input type="checkbox" data-v-active checked /> Active</label>

@@ -56,6 +56,7 @@ exports.handler = withErrorHandling(async (event) => {
       pricing: order.pricing,
       paymentStatus: order.paymentStatus,
       fulfillmentStatus: order.fulfillmentStatus,
+      inventoryStatus: order.inventoryStatus || null,
       paymentAttempts: order.paymentAttempts || [],
       history: order.history || [],
       // What this order currently protects from permanent deletion (see

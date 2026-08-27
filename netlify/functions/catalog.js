@@ -14,13 +14,18 @@
  */
 const { getDb, admin } = require('./_shared/firebaseAdmin');
 const { publicUrl } = require('./_shared/publicUrl');
+const { availableQty } = require('./_shared/inventory');
 
 function fmt(n) {
   return '₱' + Number(n).toLocaleString('en-PH') + '.00';
 }
 
+// Phase 5D: availability is stockQty - reservedQty, never raw stockQty — a
+// variant can be fully "in stock" yet fully spoken for by other customers'
+// active reservations. Only inStock (boolean) is ever exposed publicly;
+// exact stock/reserved counts stay internal.
 function productInStock(product) {
-  return (product.variants || []).some((v) => v.active !== false && (v.stockQty || 0) > 0);
+  return (product.variants || []).some((v) => v.active !== false && availableQty(v) > 0);
 }
 
 function toCardShape(doc) {

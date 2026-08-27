@@ -70,6 +70,10 @@ function sanitizeOrder(order) {
     pricing: order.pricing,
     paymentStatus: order.paymentStatus,
     fulfillmentStatus: order.fulfillmentStatus,
+    // Absent on legacy isTest orders (predate Phase 5D) — order.js treats
+    // that the same as 'reserved' (show the normal payment form), since
+    // those orders never had reservation-expiry semantics to begin with.
+    inventoryStatus: order.inventoryStatus || null,
     latestRejection: latestRejection(order),
   };
 }

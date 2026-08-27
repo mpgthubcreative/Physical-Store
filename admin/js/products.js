@@ -21,6 +21,18 @@ const customizableCheckbox = document.querySelector('[data-customizable]');
 const customizationFields = document.querySelector('[data-customization-fields]');
 const allowTextCheckbox = document.querySelector('[data-allow-text]');
 const textFields = document.querySelector('[data-text-fields]');
+const adjustmentReasonField = document.querySelector('[data-adjustment-reason-field]');
+
+let originalStockByVariantId = new Map();
+
+function refreshAdjustmentReasonVisibility() {
+  const changed = Array.from(variantRowsEl.querySelectorAll('[data-variant-row]')).some((row) => {
+    const variantId = row.querySelector('[data-v-id]').value.trim();
+    if (!variantId || !originalStockByVariantId.has(variantId)) return false; // new variant — not an "adjustment"
+    return Number(row.querySelector('[data-v-stock]').value || 0) !== originalStockByVariantId.get(variantId);
+  });
+  adjustmentReasonField.hidden = !changed;
+}
 
 function setNote(text, isError) {
   formNote.textContent = text || '';
@@ -40,6 +52,8 @@ function addVariantRow(variant) {
   row.querySelector('[data-v-stock]').value = variant?.stockQty ?? 0;
   row.querySelector('[data-v-low]').value = variant?.lowStockThreshold ?? 5;
   row.querySelector('[data-v-active]').checked = variant ? variant.active !== false : true;
+  row.querySelector('[data-v-reserved-hint]').textContent = variant ? `${variant.reservedQty || 0} reserved` : '';
+  row.querySelector('[data-v-stock]').addEventListener('input', refreshAdjustmentReasonVisibility);
 
   const imgPreview = row.querySelector('[data-v-image-preview]');
   const imgInput = row.querySelector('[data-v-image-input]');
@@ -134,6 +148,10 @@ function openForm(product) {
   setNote('');
   variantRowsEl.innerHTML = '';
 
+  originalStockByVariantId = new Map((product?.variants || []).map((v) => [v.variantId, Number(v.stockQty || 0)]));
+  form.stockAdjustmentReason.value = '';
+  adjustmentReasonField.hidden = true;
+
   form.querySelector('[name="id"]').value = editingId || '';
   form.title.value = product?.title || '';
   form.slug.value = product?.slug || '';
@@ -196,7 +214,7 @@ allowTextCheckbox.addEventListener('change', () => {
 function renderRows() {
   const tbody = document.querySelector('[data-product-rows]');
   if (!products.length) {
-    tbody.innerHTML = '<tr><td colspan="7" class="admin-empty">No products yet — add your first one.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="admin-empty">No products yet — add your first one.</td></tr>';
     return;
   }
   tbody.innerHTML = products
@@ -208,6 +226,7 @@ function renderRows() {
       <td>₱${p.basePrice}</td>
       <td>${p.variantCount}</td>
       <td>${p.totalStock === 0 ? '<span class="admin-badge admin-badge--low">Out of stock</span>' : p.totalStock}</td>
+      <td>${p.totalReserved || 0}</td>
       <td><span class="admin-badge ${p.active ? 'admin-badge--active' : 'admin-badge--inactive'}">${p.active ? 'Active' : 'Archived'}</span></td>
       <td>
         <button type="button" class="admin-btn admin-btn--ghost admin-btn--small" data-edit="${p.id}">Edit</button>
@@ -280,6 +299,7 @@ form.addEventListener('submit', async (e) => {
       gallery: editingProduct?.gallery || [],
       collectionIds: getCheckedValues('[data-collection-checkboxes]'),
       variants: collectVariantsFromForm(),
+      stockAdjustmentReason: form.stockAdjustmentReason.value.trim(),
       customizable,
       customizationConfig: customizable
         ? {
@@ -315,6 +335,9 @@ form.addEventListener('submit', async (e) => {
     editingProduct = product;
     variantRowsEl.innerHTML = '';
     (product.variants || []).forEach((v) => addVariantRow(v));
+    originalStockByVariantId = new Map((product.variants || []).map((v) => [v.variantId, Number(v.stockQty || 0)]));
+    form.stockAdjustmentReason.value = '';
+    adjustmentReasonField.hidden = true;
   } catch (err) {
     setNote(err.message, true);
   }

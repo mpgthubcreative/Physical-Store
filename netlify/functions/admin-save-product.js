@@ -9,7 +9,7 @@
 const { requireAdmin } = require('./_shared/adminAuth');
 const { getDb } = require('./_shared/firebaseAdmin');
 const { withErrorHandling, ok, fail } = require('./_shared/response');
-const { ValidationError, slugify } = require('./_shared/validation');
+const { ValidationError, slugify, optionalString } = require('./_shared/validation');
 const { validateProductInput, saveProductTransaction } = require('./_shared/productWrite');
 
 exports.handler = withErrorHandling(async (event) => {
@@ -44,6 +44,7 @@ exports.handler = withErrorHandling(async (event) => {
   const slugTaken = slugMatch.docs.some((d) => d.id !== productId);
   if (slugTaken) throw new ValidationError(`Slug "${data.slug}" is already in use by another product.`);
 
-  const id = await saveProductTransaction(db, { productId, data, actorUid: auth.uid });
+  const stockAdjustmentReason = optionalString(body.stockAdjustmentReason, 'Stock adjustment reason', { maxLength: 300 });
+  const id = await saveProductTransaction(db, { productId, data, actorUid: auth.uid, stockAdjustmentReason });
   return ok({ id });
 });

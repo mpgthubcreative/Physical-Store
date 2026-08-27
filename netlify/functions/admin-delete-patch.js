@@ -5,12 +5,14 @@
  * no longer exists. Also blocked if any order has ever snapshotted this
  * patchId (see _shared/orderReferences.js) — same historical-integrity
  * reasoning as admin-delete-product.js. Archive instead once a patch has
- * order history.
+ * order history. Also blocked (Phase 5D correction #10) if any
+ * active/locked inventory reservation currently holds this patch.
  */
 const { requireOwner } = require('./_shared/adminAuth');
 const { getDb, getBucket } = require('./_shared/firebaseAdmin');
 const { withErrorHandling, ok, fail } = require('./_shared/response');
 const { isPatchReferencedByOrders } = require('./_shared/orderReferences');
+const { isPatchActivelyReserved } = require('./_shared/reservationReferences');
 
 exports.handler = withErrorHandling(async (event) => {
   if (event.httpMethod !== 'POST') return fail(405, 'Method not allowed.');
@@ -37,6 +39,9 @@ exports.handler = withErrorHandling(async (event) => {
 
   if (await isPatchReferencedByOrders(id, db)) {
     return fail(409, 'This patch has order history and cannot be permanently deleted. Archive it instead.');
+  }
+  if (await isPatchActivelyReserved(id, db)) {
+    return fail(409, 'This patch is currently reserved by an unpaid customer order and cannot be permanently deleted. Archive it instead.');
   }
 
   const bucket = getBucket();

@@ -41,6 +41,7 @@ function sanitizeOrderSummary(doc) {
     total: order.pricing ? order.pricing.total : null,
     paymentStatus: order.paymentStatus,
     fulfillmentStatus: order.fulfillmentStatus,
+    inventoryStatus: order.inventoryStatus || null,
     deliveryMethod: order.deliveryMethod,
     isTest: order.isTest === true,
     createdAt: order.createdAt || null,

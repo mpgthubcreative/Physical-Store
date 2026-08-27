@@ -12,6 +12,11 @@ const formNote = document.querySelector('[data-patch-form-note]');
 const imageInput = document.querySelector('[data-patch-image-input]');
 const imagePreview = document.querySelector('[data-patch-image-preview]');
 const removeImageBtn = document.querySelector('[data-remove-patch-image]');
+const reservedHint = document.querySelector('[data-patch-reserved-hint]');
+const adjustmentReasonField = document.querySelector('[data-patch-adjustment-reason-field]');
+
+let editingPatch = null;
+let originalStockQty = null;
 
 function setNote(text, isError) {
   formNote.textContent = text || '';
@@ -20,6 +25,8 @@ function setNote(text, isError) {
 
 function openForm(patch) {
   editingId = patch ? patch.id : null;
+  editingPatch = patch || null;
+  originalStockQty = patch ? Number(patch.stockQty || 0) : null;
   document.querySelector('[data-form-title]').textContent = patch ? `Edit ${patch.name}` : 'New patch';
   form.reset();
   setNote('');
@@ -32,6 +39,10 @@ function openForm(patch) {
   form.displayWidthPct.value = patch?.displayWidthPct ?? 17;
   form.displayHeightPct.value = patch?.displayHeightPct ?? 17;
   form.description.value = patch?.description || '';
+  form.stockAdjustmentReason.value = '';
+  adjustmentReasonField.hidden = true;
+
+  reservedHint.textContent = patch ? `${patch.reservedQty || 0} currently reserved by customer order(s)` : '';
 
   imagePreview.src = patch?.imageUrl || '';
   imagePreview.style.visibility = patch?.imageUrl ? 'visible' : 'hidden';
@@ -46,12 +57,19 @@ function openForm(patch) {
 function closeForm() {
   formCard.hidden = true;
   editingId = null;
+  editingPatch = null;
+  originalStockQty = null;
 }
+
+form.stockQty.addEventListener('input', () => {
+  const changed = originalStockQty !== null && Number(form.stockQty.value || 0) !== originalStockQty;
+  adjustmentReasonField.hidden = !changed;
+});
 
 function renderRows() {
   const tbody = document.querySelector('[data-patch-rows]');
   if (!patches.length) {
-    tbody.innerHTML = '<tr><td colspan="8" class="admin-empty">No patches yet — add your first one.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" class="admin-empty">No patches yet — add your first one.</td></tr>';
     return;
   }
   tbody.innerHTML = patches
@@ -62,6 +80,7 @@ function renderRows() {
       <td>${p.name}</td>
       <td>₱${p.price}</td>
       <td>${p.stockQty ?? 0}</td>
+      <td>${p.reservedQty ?? 0}</td>
       <td>${p.displayWidthPct}×${p.displayHeightPct}</td>
       <td><span class="admin-badge ${p.active ? 'admin-badge--active' : 'admin-badge--inactive'}">${p.active ? 'Active' : 'Archived'}</span></td>
       <td>&mdash;</td>
@@ -127,6 +146,7 @@ form.addEventListener('submit', async (e) => {
       displayWidthPct: Number(form.displayWidthPct.value),
       displayHeightPct: Number(form.displayHeightPct.value),
       description: form.description.value,
+      stockAdjustmentReason: form.stockAdjustmentReason.value.trim(),
     };
     const result = await apiFetch('/api/admin-save-patch', { method: 'POST', body: JSON.stringify(body) });
     setNote('Saved.', false);
@@ -134,6 +154,9 @@ form.addEventListener('submit', async (e) => {
     form.querySelector('[name="id"]').value = result.id;
     imageInput.disabled = false;
     imageInput.title = '';
+    originalStockQty = body.stockQty;
+    form.stockAdjustmentReason.value = '';
+    adjustmentReasonField.hidden = true;
     await loadPatches();
   } catch (err) {
     setNote(err.message, true);

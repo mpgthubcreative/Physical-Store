@@ -8,12 +8,19 @@
  * reconstructible even after the live catalog record is gone, and this is
  * the one action that would actually remove the record itself. Archive
  * instead once a product has order history.
+ *
+ * Also blocked (Phase 5D correction #10) if any active/locked inventory
+ * reservation currently holds this product — a product that has never
+ * appeared in a completed order could still be reserved right now by an
+ * unpaid customer; permanent deletion must not be allowed to pull the rug
+ * out from under that in-flight order.
  */
 const { requireOwner } = require('./_shared/adminAuth');
 const { getDb, getBucket } = require('./_shared/firebaseAdmin');
 const { withErrorHandling, ok, fail } = require('./_shared/response');
 const { releaseAllSkusForProduct } = require('./_shared/productWrite');
 const { isProductReferencedByOrders } = require('./_shared/orderReferences');
+const { isProductActivelyReserved } = require('./_shared/reservationReferences');
 
 async function deleteStorageObject(bucket, path) {
   if (!path) return;
@@ -41,6 +48,9 @@ exports.handler = withErrorHandling(async (event) => {
 
   if (await isProductReferencedByOrders(id, db)) {
     return fail(409, 'This product has order history and cannot be permanently deleted. Archive it instead.');
+  }
+  if (await isProductActivelyReserved(id, db)) {
+    return fail(409, 'This product is currently reserved by an unpaid customer order and cannot be permanently deleted. Archive it instead.');
   }
 
   await releaseAllSkusForProduct(db, id);

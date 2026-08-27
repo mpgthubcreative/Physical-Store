@@ -16,6 +16,17 @@
  * order. `orderNumbers/{candidate}` is claimed inside the same transaction
  * that creates the order (same pattern as skuIndex), retried with a fresh
  * candidate on the astronomically rare collision.
+ *
+ * Phase 5D: on the "creating fresh" branch only (never the idempotent-
+ * replay branch), the same transaction also reserves inventory for the
+ * whole cart via _shared/inventory.js's reserveInventory — all of its
+ * reads happen after the idempotency/order-number reads and before any of
+ * this function's own writes, satisfying Firestore's read-before-write
+ * transaction rule. If reserveInventory throws InsufficientStockError, it
+ * propagates out of the retry loop below (never treated as an
+ * OrderNumberCollision) and is caught by the outer handler to produce the
+ * same CART_INVALID/OUT_OF_STOCK response shape orderValidation.js's Pass 2
+ * already produces.
  */
 const { admin, getDb } = require('./_shared/firebaseAdmin');
 const { withErrorHandling, ok, fail, json } = require('./_shared/response');
@@ -23,6 +34,7 @@ const { ValidationError, requireString, optionalString, requireEmail, requireMob
 const { resolveAndValidateCart, CartInvalidError } = require('./_shared/orderValidation');
 const { getShippingSettings } = require('./_shared/settings');
 const { generateOrderNumberCandidate, isValidAccessToken, isValidIdempotencyKey, hashToken, computeRequestFingerprint } = require('./_shared/orderSecurity');
+const { reserveInventory, freshExpiry, InsufficientStockError } = require('./_shared/inventory');
 
 const MAX_ORDER_NUMBER_ATTEMPTS = 5;
 
@@ -84,7 +96,7 @@ exports.handler = withErrorHandling(async (event) => {
     }
     throw err;
   }
-  const { lines, subtotal } = cartResult;
+  const { lines, subtotal, resources } = cartResult;
 
   // Denormalized, flat, deduplicated reference lists — Firestore's
   // array-contains can't match "does any object in items[] have field X"
@@ -94,6 +106,11 @@ exports.handler = withErrorHandling(async (event) => {
   // Storage object removal would damage this order's historical integrity.
   const referencedProductIds = [...new Set(lines.map((l) => l.productId))];
   const referencedPatchIds = [...new Set(lines.flatMap((l) => (l.customization ? l.customization.patches.map((p) => p.patchId) : [])))];
+  // Same flat-array workaround, used by _shared/reservationReferences.js to
+  // decide whether a product/patch is currently held by an active/locked
+  // reservation before it can be permanently deleted.
+  const resourceProductIds = [...new Set(resources.filter((r) => r.type === 'variant').map((r) => r.productId))];
+  const resourcePatchIds = [...new Set(resources.filter((r) => r.type === 'patch').map((r) => r.patchId))];
   const referencedImagePaths = [
     ...new Set([
       ...lines.map((l) => l.thumbnailImagePath).filter(Boolean),
@@ -120,65 +137,96 @@ exports.handler = withErrorHandling(async (event) => {
   const idempRef = db.collection('orderIdempotency').doc(idempotencyKey);
 
   let result;
-  for (let attempt = 0; attempt < MAX_ORDER_NUMBER_ATTEMPTS; attempt++) {
-    const candidateNumber = generateOrderNumberCandidate();
-    try {
-      // eslint-disable-next-line no-await-in-loop
-      result = await db.runTransaction(async (tx) => {
-        const idempSnap = await tx.get(idempRef);
-        if (idempSnap.exists) {
-          const existing = idempSnap.data();
-          if (existing.fingerprint !== fingerprint) {
-            return { ok: false, status: 409, error: 'This idempotency key was already used for a different order request.' };
+  try {
+    for (let attempt = 0; attempt < MAX_ORDER_NUMBER_ATTEMPTS; attempt++) {
+      const candidateNumber = generateOrderNumberCandidate();
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        result = await db.runTransaction(async (tx) => {
+          const idempSnap = await tx.get(idempRef);
+          if (idempSnap.exists) {
+            const existing = idempSnap.data();
+            if (existing.fingerprint !== fingerprint) {
+              return { ok: false, status: 409, error: 'This idempotency key was already used for a different order request.' };
+            }
+            return { ok: true, orderNumber: existing.orderNumber };
           }
-          return { ok: true, orderNumber: existing.orderNumber };
-        }
 
-        const orderNumberRef = db.collection('orderNumbers').doc(candidateNumber);
-        const numSnap = await tx.get(orderNumberRef);
-        if (numSnap.exists) throw new OrderNumberCollision();
+          const orderNumberRef = db.collection('orderNumbers').doc(candidateNumber);
+          const numSnap = await tx.get(orderNumberRef);
+          if (numSnap.exists) throw new OrderNumberCollision();
 
-        const orderRef = db.collection('orders').doc();
-        const now = admin.firestore.FieldValue.serverTimestamp();
+          const orderRef = db.collection('orders').doc();
+          const reservationRef = db.collection('inventoryReservations').doc(orderRef.id);
+          const now = admin.firestore.Timestamp.now();
+          const serverNow = admin.firestore.FieldValue.serverTimestamp();
 
-        tx.set(orderRef, {
-          orderNumber: candidateNumber,
-          accessTokenHash,
-          idempotencyKey,
-          customerName: fullName,
-          customerEmail: email,
-          customerMobile: mobile,
-          deliveryMethod,
-          deliveryAddress,
-          orderNotes,
-          items: lines,
-          referencedProductIds,
-          referencedPatchIds,
-          referencedImagePaths,
-          // Server-controlled, always false through this public endpoint —
-          // never read from the request body. There is no "create a test
-          // order" path through create-order.js; a future Owner-only tool
-          // that needs to create genuine test orders would set this true
-          // itself, server-side, the same way this sets it false.
-          isTest: false,
-          pricing: { subtotal, shippingFee, total },
-          paymentStatus: 'awaiting_payment',
-          fulfillmentStatus: 'unfulfilled',
-          paymentAttempts: [],
-          history: [{ action: 'created', at: admin.firestore.Timestamp.now(), actorType: 'customer', actorId: null, meta: {} }],
-          createdAt: now,
-          updatedAt: now,
+          // Reads all inventory it needs and validates availability BEFORE
+          // any write below — throws InsufficientStockError (never treated
+          // as an order-number collision) if the whole-cart demand can't be
+          // met, aborting the entire transaction with nothing written.
+          await reserveInventory(tx, db, resources);
+
+          tx.set(orderRef, {
+            orderNumber: candidateNumber,
+            accessTokenHash,
+            idempotencyKey,
+            customerName: fullName,
+            customerEmail: email,
+            customerMobile: mobile,
+            deliveryMethod,
+            deliveryAddress,
+            orderNotes,
+            items: lines,
+            referencedProductIds,
+            referencedPatchIds,
+            referencedImagePaths,
+            // Server-controlled, always false through this public endpoint —
+            // never read from the request body. There is no "create a test
+            // order" path through create-order.js; a future Owner-only tool
+            // that needs to create genuine test orders would set this true
+            // itself, server-side, the same way this sets it false.
+            isTest: false,
+            inventoryStatus: 'reserved',
+            pricing: { subtotal, shippingFee, total },
+            paymentStatus: 'awaiting_payment',
+            fulfillmentStatus: 'unfulfilled',
+            paymentAttempts: [],
+            history: [
+              { action: 'created', at: now, actorType: 'customer', actorId: null, meta: {} },
+              { action: 'inventory_reserved', at: now, actorType: 'system', actorId: null, meta: {} },
+            ],
+            createdAt: serverNow,
+            updatedAt: serverNow,
+          });
+          tx.set(reservationRef, {
+            orderId: orderRef.id,
+            orderNumber: candidateNumber,
+            status: 'active',
+            resources,
+            resourceProductIds,
+            resourcePatchIds,
+            createdAt: now,
+            expiresAt: freshExpiry(now),
+            updatedAt: now,
+            history: [{ action: 'created', at: now, actorType: 'customer', actorId: null, meta: {} }],
+          });
+          tx.set(orderNumberRef, { orderId: orderRef.id, createdAt: serverNow });
+          tx.set(idempRef, { fingerprint, orderId: orderRef.id, orderNumber: candidateNumber, createdAt: serverNow });
+
+          return { ok: true, orderNumber: candidateNumber };
         });
-        tx.set(orderNumberRef, { orderId: orderRef.id, createdAt: now });
-        tx.set(idempRef, { fingerprint, orderId: orderRef.id, orderNumber: candidateNumber, createdAt: now });
-
-        return { ok: true, orderNumber: candidateNumber };
-      });
-      break;
-    } catch (err) {
-      if (err instanceof OrderNumberCollision) continue;
-      throw err;
+        break;
+      } catch (err) {
+        if (err instanceof OrderNumberCollision) continue;
+        throw err;
+      }
     }
+  } catch (err) {
+    if (err instanceof InsufficientStockError) {
+      return json(400, { error: 'CART_INVALID', reason: 'OUT_OF_STOCK', lineIndex: null, message: 'Sorry, part of your cart is no longer available in the quantity requested.' });
+    }
+    throw err;
   }
 
   if (!result) throw new Error('Could not generate a unique order number after several attempts.');

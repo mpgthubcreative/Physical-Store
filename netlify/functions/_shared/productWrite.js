@@ -140,14 +140,70 @@ function validateProductInput(raw, { existingCollectionIds, existingPatchIds }) 
 /**
  * Writes the product doc and maintains skuIndex/{sku} entries in one
  * transaction. Returns the product ID (new or existing).
+ *
+ * Phase 5D correction #8/#9: reservedQty lives inside each embedded variant
+ * but must NEVER be trusted from the browser — validateVariant() above
+ * doesn't even read it from raw input, so without this step it would
+ * silently be dropped from the field entirely on every save (a full
+ * document `.set()`, not a merge). Here it's re-attached from the existing
+ * server-side variant by variantId, `newStockQty < reservedQty` is
+ * rejected, and structurally removing a variant that still has
+ * reservedQty > 0 is refused outright — an Admin can't free up "phantom"
+ * stock by rewriting the variants array, and can't delete inventory a
+ * customer currently has reserved.
+ *
+ * Also writes one inventoryAdjustments/{id} audit entry per EXISTING
+ * variant whose stockQty actually changed (a brand-new variant's initial
+ * stock isn't an "adjustment" — there's no prior value to explain). A
+ * `stockAdjustmentReason` is required from the caller whenever any such
+ * change is detected.
  */
-async function saveProductTransaction(db, { productId, data, actorUid }) {
+async function saveProductTransaction(db, { productId, data, actorUid, stockAdjustmentReason }) {
   const productRef = productId ? db.collection('products').doc(productId) : db.collection('products').doc();
 
   await db.runTransaction(async (tx) => {
     // ---- reads first (Firestore transactions require all reads before any writes) ----
     const productSnap = productId ? await tx.get(productRef) : null;
     const existingData = productSnap && productSnap.exists ? productSnap.data() : null;
+
+    const existingVariantsById = new Map((existingData?.variants || []).map((v) => [v.variantId, v]));
+    const existingReservedQty = (v) => {
+      const n = Number(v && v.reservedQty);
+      return Number.isFinite(n) ? n : 0;
+    };
+
+    const submittedVariantIds = new Set(data.variants.map((v) => v.variantId));
+    for (const [variantId, existingVariant] of existingVariantsById) {
+      const reserved = existingReservedQty(existingVariant);
+      if (!submittedVariantIds.has(variantId) && reserved > 0) {
+        throw new ValidationError(
+          `Cannot remove variant "${existingVariant.name}" — it has ${reserved} unit(s) currently reserved by customer order(s). Wait for those reservations to clear, or contact the customer, before removing it.`
+        );
+      }
+    }
+
+    const mergedVariants = data.variants.map((v) => {
+      const reserved = existingReservedQty(existingVariantsById.get(v.variantId));
+      if (v.stockQty < reserved) {
+        throw new ValidationError(`Variant "${v.name}" stock (${v.stockQty}) cannot be less than its reserved quantity (${reserved}).`);
+      }
+      return { ...v, reservedQty: reserved };
+    });
+    data = { ...data, variants: mergedVariants };
+
+    const stockAdjustments = [];
+    for (const v of mergedVariants) {
+      const existingVariant = existingVariantsById.get(v.variantId);
+      if (!existingVariant) continue; // brand-new variant — initial stock isn't an "adjustment"
+      const prevStockNum = Number(existingVariant.stockQty);
+      const prevStock = Number.isFinite(prevStockNum) ? prevStockNum : 0;
+      if (v.stockQty !== prevStock) {
+        stockAdjustments.push({ variantId: v.variantId, variantName: v.name, previousStockQty: prevStock, newStockQty: v.stockQty, delta: v.stockQty - prevStock });
+      }
+    }
+    if (stockAdjustments.length && !stockAdjustmentReason) {
+      throw new ValidationError('A reason is required when changing a variant\'s stock quantity.');
+    }
 
     const oldSkuMap = new Map((existingData?.variants || []).map((v) => [normalizeSku(v.sku), v.variantId]));
     const newSkuMap = new Map(data.variants.map((v) => [normalizeSku(v.sku), v.variantId]));
@@ -183,6 +239,20 @@ async function saveProductTransaction(db, { productId, data, actorUid }) {
       createdBy: existingData ? existingData.createdBy : actorUid,
       updatedAt: now,
       updatedBy: actorUid,
+    });
+
+    stockAdjustments.forEach((adj) => {
+      tx.set(db.collection('inventoryAdjustments').doc(), {
+        resourceType: 'variant',
+        productId: productRef.id,
+        variantId: adj.variantId,
+        previousStockQty: adj.previousStockQty,
+        newStockQty: adj.newStockQty,
+        delta: adj.delta,
+        reason: stockAdjustmentReason,
+        adjustedBy: actorUid,
+        adjustedAt: now,
+      });
     });
   });
 

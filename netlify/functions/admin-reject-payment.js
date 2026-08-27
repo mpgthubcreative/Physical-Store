@@ -9,11 +9,19 @@
  * Marks the LATEST payment attempt as "rejected" (never overwrites it —
  * the attempt stays visible forever); a customer resubmission afterward
  * appends a brand-new attempt rather than reusing this one.
+ *
+ * Phase 5D: reactivates the reservation (locked -> active) with a fresh
+ * 20-minute TTL rather than releasing it — the customer keeps their spot
+ * to correct a bad reference/payment submission. reservedQty is NOT
+ * decremented here (the reservation is still held, just no longer locked
+ * to a specific pending review). Legacy isTest orders have no reservation
+ * document and skip this entirely.
  */
 const { admin, getDb } = require('./_shared/firebaseAdmin');
 const { requireAdmin } = require('./_shared/adminAuth');
 const { withErrorHandling, ok, fail } = require('./_shared/response');
 const { ValidationError, requireString, optionalString, requireOneOf } = require('./_shared/validation');
+const { reactivateReservation, ReservationConflictError } = require('./_shared/inventory');
 
 const REJECTION_CODES = ['REFERENCE_NOT_FOUND', 'AMOUNT_MISMATCH', 'DUPLICATE_REFERENCE', 'WRONG_PAYMENT_METHOD', 'OTHER'];
 
@@ -35,7 +43,9 @@ exports.handler = withErrorHandling(async (event) => {
   const db = getDb();
   const ref = db.collection('orders').doc(orderId);
 
-  const result = await db.runTransaction(async (tx) => {
+  let result;
+  try {
+    result = await db.runTransaction(async (tx) => {
     const snap = await tx.get(ref);
     if (!snap.exists) return { ok: false, status: 404, error: 'Order not found.' };
 
@@ -53,21 +63,38 @@ exports.handler = withErrorHandling(async (event) => {
       i === lastIndex ? { ...a, status: 'rejected', reviewedBy: auth.uid, reviewedAt: now, rejectionCode, rejectionNote: rejectionNote || null } : a
     );
 
+    const paymentHistoryEntry = {
+      action: 'payment_rejected',
+      at: now,
+      actorType: 'admin',
+      actorId: auth.uid,
+      meta: { previousStatus: 'pending_review', newStatus: 'rejected', rejectionCode, rejectionNote: rejectionNote || null },
+    };
+
+    let reactivatePatch = null;
+    if (order.isTest !== true) {
+      const reservationRef = db.collection('inventoryReservations').doc(orderId);
+      reactivatePatch = (await reactivateReservation(tx, db, reservationRef, { actorType: 'admin', actorId: auth.uid })).orderPatch;
+    }
+
     tx.update(ref, {
       paymentAttempts: updatedAttempts,
       paymentStatus: 'rejected',
+      ...(reactivatePatch ? { inventoryStatus: reactivatePatch.inventoryStatus } : {}),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      history: admin.firestore.FieldValue.arrayUnion({
-        action: 'payment_rejected',
-        at: now,
-        actorType: 'admin',
-        actorId: auth.uid,
-        meta: { previousStatus: 'pending_review', newStatus: 'rejected', rejectionCode, rejectionNote: rejectionNote || null },
-      }),
+      history: reactivatePatch
+        ? admin.firestore.FieldValue.arrayUnion(paymentHistoryEntry, reactivatePatch.historyEntry)
+        : admin.firestore.FieldValue.arrayUnion(paymentHistoryEntry),
     });
 
-    return { ok: true };
-  });
+      return { ok: true };
+    });
+  } catch (err) {
+    if (err instanceof ReservationConflictError) {
+      return fail(409, 'This order\'s inventory reservation is not in a locked state — it may already have been reviewed. Refresh and check the order status.');
+    }
+    throw err;
+  }
 
   if (!result.ok) return fail(result.status, result.error);
   return ok({ paymentStatus: 'rejected' });
