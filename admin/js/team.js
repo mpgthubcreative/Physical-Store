@@ -49,11 +49,16 @@ function renderRows() {
                <button type="button" class="admin-btn admin-btn--danger admin-btn--small" data-remove="${m.uid}">Remove access</button>`
             : `<button type="button" class="admin-btn admin-btn--ghost admin-btn--small" data-disable="${m.uid}">Disable</button>`;
       }
+      const claimsWarning =
+        m.claimsMatch === false
+          ? ' <span class="admin-badge admin-badge--low" title="This account\'s Firestore record does not match its live Firebase Auth custom claims. Disable then Reactivate to repair.">Claims mismatch</span>'
+          : '';
+
       return `
       <tr>
         <td>${m.email}${isSelf ? ' <span class="hint">(you)</span>' : ''}</td>
         <td>${isOwner ? 'Owner' : 'Admin'}</td>
-        <td><span class="admin-badge ${m.status === 'active' ? 'admin-badge--active' : 'admin-badge--inactive'}">${m.status === 'active' ? 'Active' : 'Disabled'}</span></td>
+        <td><span class="admin-badge ${m.status === 'active' ? 'admin-badge--active' : 'admin-badge--inactive'}">${m.status === 'active' ? 'Active' : 'Disabled'}</span>${claimsWarning}</td>
         <td>${formatDate(m.createdAt)}</td>
         <td>${actions}</td>
       </tr>`;
