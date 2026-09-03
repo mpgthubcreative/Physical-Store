@@ -16,7 +16,7 @@
 const { admin, getDb } = require('./_shared/firebaseAdmin');
 const { withErrorHandling, ok, fail, json } = require('./_shared/response');
 const { requireString } = require('./_shared/validation');
-const { isValidAccessToken, hashToken, hashesMatch } = require('./_shared/orderSecurity');
+const { resolveOrderByToken, TOKEN_FIELD_MAX_LENGTH } = require('./_shared/orderTokenAuth');
 const { reReserveExpired, InsufficientStockError, ReservationConflictError } = require('./_shared/inventory');
 
 const RESERVE_ALLOWED_FROM = ['awaiting_payment', 'rejected'];
@@ -27,20 +27,14 @@ exports.handler = withErrorHandling(async (event) => {
   const body = JSON.parse(event.body || '{}');
   const db = getDb();
 
-  const token = requireString(body.token, 'token', { maxLength: 100 });
-  if (!isValidAccessToken(token)) return fail(404, 'Order not found.');
-
-  const hash = hashToken(token);
+  const token = requireString(body.token, 'token', { maxLength: TOKEN_FIELD_MAX_LENGTH });
 
   let result;
   try {
     result = await db.runTransaction(async (tx) => {
-      const snap = await tx.get(db.collection('orders').where('accessTokenHash', '==', hash).limit(1));
-      if (snap.empty) return { ok: false, status: 404, error: 'Order not found.' };
-
-      const doc = snap.docs[0];
-      const order = doc.data();
-      if (!hashesMatch(hash, order.accessTokenHash)) return { ok: false, status: 404, error: 'Order not found.' };
+      const resolved = await resolveOrderByToken(db, token, 'reservation:retry', { tx });
+      if (!resolved.ok) return { ok: false, status: 404, error: 'Order not found.' };
+      const { doc, order } = resolved;
 
       if (order.isTest === true) return { ok: false, status: 400, error: 'Not applicable for this order.' };
       if (!RESERVE_ALLOWED_FROM.includes(order.paymentStatus)) {

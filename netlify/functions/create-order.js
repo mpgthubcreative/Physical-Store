@@ -36,6 +36,8 @@ const { getShippingSettings, getPaymentSettings } = require('./_shared/settings'
 const { validateDestination, resolveShippingQuote } = require('./_shared/shippingRates');
 const { generateOrderNumberCandidate, isValidAccessToken, isValidIdempotencyKey, hashToken, computeRequestFingerprint } = require('./_shared/orderSecurity');
 const { reserveInventory, freshExpiry, InsufficientStockError } = require('./_shared/inventory');
+const { getEmailSettings } = require('./_shared/emailSettings');
+const { enqueueOrderCreated, enqueueAdminNewOrder } = require('./_shared/emailOutbox');
 
 const MAX_ORDER_NUMBER_ATTEMPTS = 5;
 
@@ -189,6 +191,10 @@ exports.handler = withErrorHandling(async (event) => {
           // met, aborting the entire transaction with nothing written.
           await reserveInventory(tx, db, resources);
 
+          // Also a read — must happen before any write below (Firestore's
+          // reads-before-writes rule).
+          const emailSettings = await getEmailSettings(db, tx);
+
           tx.set(orderRef, {
             orderNumber: candidateNumber,
             accessTokenHash,
@@ -260,6 +266,34 @@ exports.handler = withErrorHandling(async (event) => {
           });
           tx.set(orderNumberRef, { orderId: orderRef.id, createdAt: serverNow });
           tx.set(idempRef, { fingerprint, orderId: orderRef.id, orderNumber: candidateNumber, createdAt: serverNow });
+
+          enqueueOrderCreated(tx, db, {
+            orderId: orderRef.id,
+            recipientEmail: email,
+            payload: {
+              orderNumber: candidateNumber,
+              customerName: fullName,
+              subtotal,
+              shippingFee,
+              total,
+              deliveryMethod,
+              destinationLabel: quote.regionLabel,
+            },
+            isTestOrder: false, // this endpoint never creates a test order — see the isTest field above
+            emailSettings,
+            now,
+          });
+          const adminEmail = (process.env.ADMIN_NOTIFICATION_EMAIL || '').trim();
+          if (adminEmail) {
+            enqueueAdminNewOrder(tx, db, {
+              orderId: orderRef.id,
+              adminEmail,
+              payload: { orderNumber: candidateNumber, customerName: fullName, total, deliveryMethod, destinationLabel: quote.regionLabel },
+              isTestOrder: false,
+              emailSettings,
+              now,
+            });
+          }
 
           return { ok: true, orderNumber: candidateNumber };
         });

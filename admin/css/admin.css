@@ -468,12 +468,17 @@ body { background: var(--panel); }
 }
 .admin-store-status.is-live { background: var(--admin-positive-bg); border-color: #A9DDB5; }
 .admin-store-status.is-disabled { background: var(--admin-neutral-bg); border-color: var(--border); }
+/* QA email mode is deliberately the loudest of the three states — a thicker,
+   high-contrast border on top of the warning palette so it can never be
+   mistaken for a calm/neutral status while it is active. */
+.admin-store-status.is-qa { background: var(--admin-warning-bg); border-color: var(--admin-warning-fg); border-width: 2.5px; }
 .admin-store-status__badge {
   font: 800 12.5px var(--font-body); letter-spacing: .06em; padding: 8px 14px;
   border-radius: 999px; white-space: nowrap; flex: none;
 }
 .admin-store-status.is-live .admin-store-status__badge { background: var(--admin-positive-fg); color: #fff; }
 .admin-store-status.is-disabled .admin-store-status__badge { background: var(--ink-muted); color: #fff; }
+.admin-store-status.is-qa .admin-store-status__badge { background: var(--admin-warning-fg); color: #fff; }
 .admin-store-status__body { min-width: 0; flex: 1 1 260px; }
 .admin-store-status__title { font: 700 15px var(--font-heading); color: var(--ink); }
 .admin-store-status__desc { font: 500 13px var(--font-body); color: var(--ink-muted); margin-top: 3px; }

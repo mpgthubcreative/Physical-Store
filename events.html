@@ -41,6 +41,14 @@
       </div>
       <div class="booking-card">
         <form data-booking-form novalidate>
+          <!-- Honeypot — invisible to a real visitor (off-screen, never
+               display:none/hidden, which some bots skip), never labeled
+               with any human-facing text. A filled-in value marks the
+               submission as a bot; see submit-event-inquiry.js. -->
+          <div style="position:absolute;left:-9999px;top:-9999px;" aria-hidden="true">
+            <label for="ev-website">Website</label>
+            <input type="text" id="ev-website" name="website" tabindex="-1" autocomplete="off" />
+          </div>
           <div class="field-row">
             <div class="field">
               <label for="ev-name">Name</label>

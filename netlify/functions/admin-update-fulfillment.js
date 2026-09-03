@@ -25,6 +25,8 @@ const { admin, getDb } = require('./_shared/firebaseAdmin');
 const { requireAdmin } = require('./_shared/adminAuth');
 const { withErrorHandling, ok, fail } = require('./_shared/response');
 const { requireString, optionalString, requireOneOf } = require('./_shared/validation');
+const { getEmailSettings } = require('./_shared/emailSettings');
+const { enqueueFulfillmentEvent } = require('./_shared/emailOutbox');
 
 const ALL_STATUSES = ['unfulfilled', 'processing', 'ready_for_pickup', 'shipped', 'completed'];
 
@@ -83,6 +85,10 @@ exports.handler = withErrorHandling(async (event) => {
       return { ok: false, status: 400, error: '"shipped" only applies to delivery orders.' };
     }
 
+    // Read BEFORE any write in this transaction (Firestore's reads-before-
+    // writes rule).
+    const emailSettings = await getEmailSettings(db, tx);
+
     const now = admin.firestore.Timestamp.now();
 
     // Only the shipped transition writes courier/tracking. Every other
@@ -105,6 +111,16 @@ exports.handler = withErrorHandling(async (event) => {
           ...(targetStatus === 'shipped' ? { courier, trackingNumber } : {}),
         },
       }),
+    });
+
+    enqueueFulfillmentEvent(tx, db, {
+      status: targetStatus,
+      orderId,
+      recipientEmail: order.customerEmail,
+      payload: { orderNumber: order.orderNumber, customerName: order.customerName, courier, trackingNumber },
+      isTestOrder: order.isTest === true,
+      emailSettings,
+      now,
     });
 
     return { ok: true };

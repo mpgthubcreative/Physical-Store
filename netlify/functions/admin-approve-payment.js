@@ -26,6 +26,8 @@ const { requireAdmin } = require('./_shared/adminAuth');
 const { withErrorHandling, ok, fail } = require('./_shared/response');
 const { requireString } = require('./_shared/validation');
 const { consumeReservation, ReservationConflictError } = require('./_shared/inventory');
+const { getEmailSettings } = require('./_shared/emailSettings');
+const { enqueuePaymentApproved } = require('./_shared/emailOutbox');
 
 exports.handler = withErrorHandling(async (event) => {
   if (event.httpMethod !== 'POST') return fail(405, 'Method not allowed.');
@@ -54,6 +56,10 @@ exports.handler = withErrorHandling(async (event) => {
     const lastIndex = attempts.length - 1;
     if (lastIndex < 0) return { ok: false, status: 400, error: 'This order has no payment attempt to approve.' };
 
+    // Read BEFORE any write in this transaction (Firestore's reads-before-
+    // writes rule) — consumeReservation() below writes.
+    const emailSettings = await getEmailSettings(db, tx);
+
     const now = admin.firestore.Timestamp.now();
     const updatedAttempts = attempts.map((a, i) => (i === lastIndex ? { ...a, status: 'approved', reviewedBy: auth.uid, reviewedAt: now } : a));
 
@@ -79,6 +85,16 @@ exports.handler = withErrorHandling(async (event) => {
       history: consumePatch
         ? admin.firestore.FieldValue.arrayUnion(paymentHistoryEntry, consumePatch.historyEntry)
         : admin.firestore.FieldValue.arrayUnion(paymentHistoryEntry),
+    });
+
+    enqueuePaymentApproved(tx, db, {
+      orderId,
+      attemptId: attempts[lastIndex].attemptId,
+      recipientEmail: order.customerEmail,
+      payload: { orderNumber: order.orderNumber, customerName: order.customerName, total: order.pricing.total },
+      isTestOrder: order.isTest === true,
+      emailSettings,
+      now,
     });
 
       return { ok: true };

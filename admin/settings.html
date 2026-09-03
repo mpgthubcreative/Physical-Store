@@ -34,6 +34,7 @@
         <div class="admin-tabs" role="tablist">
           <button type="button" class="admin-tab is-active" role="tab" data-tab-btn="payments">Payments</button>
           <button type="button" class="admin-tab" role="tab" data-tab-btn="shipping">Shipping</button>
+          <button type="button" class="admin-tab" role="tab" data-tab-btn="email">Email</button>
         </div>
 
         <!-- ================= PAYMENTS ================= -->
@@ -235,6 +236,63 @@
               <p class="admin-note" data-shipping-note></p>
             </div>
           </form>
+        </section>
+
+        <!-- ================= EMAIL ================= -->
+        <section data-tab-panel="email" hidden>
+          <!-- Mode banner — the single most important thing on this tab.
+               Rendered by settings.js so it can never disagree with the
+               server's actual stored mode. -->
+          <div data-email-mode-status></div>
+
+          <div class="admin-card" data-email-owner-only-note hidden>
+            <div class="admin-inline-note admin-inline-note--info">
+              <strong>View only.</strong> Only the Owner account can change the Email Mode. You can still see
+              configuration status below.
+            </div>
+          </div>
+
+          <div class="admin-card" data-email-qa-banner hidden>
+            <div class="admin-inline-note admin-inline-note--warning">
+              <strong>QA OVERRIDE ACTIVE</strong> — every outgoing email currently redirects to
+              <span data-email-qa-hint></span> regardless of the real recipient. Remove
+              <code>EMAIL_QA_OVERRIDE_RECIPIENT</code> from Netlify environment variables and redeploy before
+              switching to LIVE mode.
+            </div>
+          </div>
+
+          <div class="admin-card">
+            <h2 class="admin-card__title">Email Mode</h2>
+            <p class="admin-card__desc">Controls whether Buddy sends any email at all, and to whom.</p>
+
+            <div class="admin-report-presets" role="group" aria-label="Email mode" data-email-mode-buttons>
+              <button type="button" class="admin-preset" data-email-mode="off">OFF</button>
+              <button type="button" class="admin-preset" data-email-mode="qa">QA</button>
+              <button type="button" class="admin-preset" data-email-mode="live">LIVE</button>
+            </div>
+
+            <ul class="hint" style="margin:16px 0 0;padding-left:18px;line-height:1.7;">
+              <li><strong>OFF</strong> — nothing sends. New events are recorded but permanently marked suppressed.</li>
+              <li><strong>QA</strong> — every otherwise-sendable email redirects to the configured QA recipient only. Requires <code>EMAIL_QA_OVERRIDE_RECIPIENT</code> to be set.</li>
+              <li><strong>LIVE</strong> — sends to real customer/admin addresses. Refused if a QA override is still configured.</li>
+              <li>Test orders (<code>isTest:true</code>) never send real email in any mode.</li>
+            </ul>
+
+            <p class="admin-note" data-email-mode-note></p>
+          </div>
+
+          <div class="admin-card">
+            <h2 class="admin-card__title">Server configuration status</h2>
+            <p class="admin-card__desc">Read-only — configured in Netlify environment variables, never here. No secret values are ever shown.</p>
+            <div class="admin-kv" data-email-config-grid></div>
+          </div>
+
+          <div class="admin-card" data-email-issues-card hidden>
+            <div class="admin-inline-note admin-inline-note--warning">
+              Email delivery issues: <strong data-email-issues-count>0</strong>
+              <span class="hint" style="display:block;margin-top:4px;">Permanently failed or uncertain sends — inspect in the Firestore console under <code>emailOutbox</code>.</span>
+            </div>
+          </div>
         </section>
       </div>
     </main>

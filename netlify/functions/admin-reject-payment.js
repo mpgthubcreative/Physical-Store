@@ -22,8 +22,20 @@ const { requireAdmin } = require('./_shared/adminAuth');
 const { withErrorHandling, ok, fail } = require('./_shared/response');
 const { ValidationError, requireString, optionalString, requireOneOf } = require('./_shared/validation');
 const { reactivateReservation, ReservationConflictError } = require('./_shared/inventory');
+const { getEmailSettings } = require('./_shared/emailSettings');
+const { enqueuePaymentRejected } = require('./_shared/emailOutbox');
 
 const REJECTION_CODES = ['REFERENCE_NOT_FOUND', 'AMOUNT_MISMATCH', 'DUPLICATE_REFERENCE', 'WRONG_PAYMENT_METHOD', 'OTHER'];
+
+// Matches js/order.js's own REJECTION_LABELS exactly — the email should
+// never say something different from what the order-status page says.
+const REJECTION_LABELS = {
+  REFERENCE_NOT_FOUND: 'We could not find this payment reference.',
+  AMOUNT_MISMATCH: 'The amount paid did not match the order total.',
+  DUPLICATE_REFERENCE: 'This payment reference has already been used.',
+  WRONG_PAYMENT_METHOD: 'This payment method does not match what was selected.',
+  OTHER: 'There was an issue with this payment.',
+};
 
 exports.handler = withErrorHandling(async (event) => {
   if (event.httpMethod !== 'POST') return fail(405, 'Method not allowed.');
@@ -58,6 +70,10 @@ exports.handler = withErrorHandling(async (event) => {
     const lastIndex = attempts.length - 1;
     if (lastIndex < 0) return { ok: false, status: 400, error: 'This order has no payment attempt to reject.' };
 
+    // Read BEFORE any write in this transaction (Firestore's reads-before-
+    // writes rule) — reactivateReservation() below writes.
+    const emailSettings = await getEmailSettings(db, tx);
+
     const now = admin.firestore.Timestamp.now();
     const updatedAttempts = attempts.map((a, i) =>
       i === lastIndex ? { ...a, status: 'rejected', reviewedBy: auth.uid, reviewedAt: now, rejectionCode, rejectionNote: rejectionNote || null } : a
@@ -85,6 +101,22 @@ exports.handler = withErrorHandling(async (event) => {
       history: reactivatePatch
         ? admin.firestore.FieldValue.arrayUnion(paymentHistoryEntry, reactivatePatch.historyEntry)
         : admin.firestore.FieldValue.arrayUnion(paymentHistoryEntry),
+    });
+
+    enqueuePaymentRejected(tx, db, {
+      orderId,
+      attemptId: attempts[lastIndex].attemptId,
+      recipientEmail: order.customerEmail,
+      payload: {
+        orderNumber: order.orderNumber,
+        customerName: order.customerName,
+        reasonLabel: REJECTION_LABELS[rejectionCode] || rejectionCode,
+        reasonNote: rejectionNote || null,
+        total: order.pricing.total,
+      },
+      isTestOrder: order.isTest === true,
+      emailSettings,
+      now,
     });
 
       return { ok: true };

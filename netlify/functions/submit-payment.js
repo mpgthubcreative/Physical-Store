@@ -34,9 +34,12 @@
 const { admin, getDb } = require('./_shared/firebaseAdmin');
 const { withErrorHandling, ok, fail, json } = require('./_shared/response');
 const { requireString } = require('./_shared/validation');
-const { isValidAccessToken, isValidIdempotencyKey, hashToken, hashesMatch } = require('./_shared/orderSecurity');
+const { isValidIdempotencyKey } = require('./_shared/orderSecurity');
+const { resolveOrderByToken, TOKEN_FIELD_MAX_LENGTH } = require('./_shared/orderTokenAuth');
 const { getPaymentSettings, sanitizePaymentMethodsForCustomer } = require('./_shared/settings');
 const { expireReservationIfDue, lockReservation } = require('./_shared/inventory');
+const { getEmailSettings } = require('./_shared/emailSettings');
+const { enqueuePaymentSubmitted, enqueueAdminPaymentReview, enqueueReservationExpired } = require('./_shared/emailOutbox');
 
 const RESUBMIT_ALLOWED_FROM = ['awaiting_payment', 'rejected'];
 
@@ -46,8 +49,7 @@ exports.handler = withErrorHandling(async (event) => {
   const body = JSON.parse(event.body || '{}');
   const db = getDb();
 
-  const token = requireString(body.token, 'token', { maxLength: 100 });
-  if (!isValidAccessToken(token)) return fail(404, 'Order not found.');
+  const token = requireString(body.token, 'token', { maxLength: TOKEN_FIELD_MAX_LENGTH });
 
   const attemptId = requireString(body.attemptId, 'attemptId', { maxLength: 100 });
   if (!isValidIdempotencyKey(attemptId)) return fail(400, 'Invalid attempt ID.');
@@ -60,15 +62,15 @@ exports.handler = withErrorHandling(async (event) => {
   const enabledIds = sanitizePaymentMethodsForCustomer(paymentSettings).map((m) => m.id);
   if (!enabledIds.includes(paymentMethod)) return fail(400, 'Please select a valid payment method.');
 
-  const hash = hashToken(token);
-
   const result = await db.runTransaction(async (tx) => {
-    const snap = await tx.get(db.collection('orders').where('accessTokenHash', '==', hash).limit(1));
-    if (snap.empty) return { ok: false, status: 404, error: 'Order not found.' };
+    const resolved = await resolveOrderByToken(db, token, 'payment:submit', { tx });
+    if (!resolved.ok) return { ok: false, status: 404, error: 'Order not found.' };
+    const { doc, order } = resolved;
 
-    const doc = snap.docs[0];
-    const order = doc.data();
-    if (!hashesMatch(hash, order.accessTokenHash)) return { ok: false, status: 404, error: 'Order not found.' };
+    // Read BEFORE any write in this transaction (Firestore's reads-before-
+    // writes rule) — enqueueEmail() below needs it and must never re-read
+    // mutable config later, only use what was true at enqueue time.
+    const emailSettings = await getEmailSettings(db, tx);
 
     const attempts = order.paymentAttempts || [];
     const existing = attempts.find((a) => a.attemptId === attemptId);
@@ -86,10 +88,20 @@ exports.handler = withErrorHandling(async (event) => {
       const { reservation, expiredNow, orderPatch } = await expireReservationIfDue(tx, db, reservationRef, { actorType: 'customer' });
       if (expiredNow || reservation.status !== 'active') {
         if (expiredNow) {
+          const expiryNow = admin.firestore.Timestamp.now();
           tx.update(doc.ref, {
             inventoryStatus: orderPatch.inventoryStatus,
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
             history: admin.firestore.FieldValue.arrayUnion(orderPatch.historyEntry),
+          });
+          enqueueReservationExpired(tx, db, {
+            orderId: doc.id,
+            reservationExpiresAtMs: reservation.expiresAt.toMillis(),
+            recipientEmail: order.customerEmail,
+            payload: { orderNumber: order.orderNumber, customerName: order.customerName },
+            isTestOrder: order.isTest === true,
+            emailSettings,
+            now: expiryNow,
           });
         }
         return {
@@ -133,6 +145,29 @@ exports.handler = withErrorHandling(async (event) => {
         ? admin.firestore.FieldValue.arrayUnion(paymentHistoryEntry, lockPatch.historyEntry)
         : admin.firestore.FieldValue.arrayUnion(paymentHistoryEntry),
     });
+
+    const isTestOrder = order.isTest === true;
+    enqueuePaymentSubmitted(tx, db, {
+      orderId: doc.id,
+      attemptId,
+      recipientEmail: order.customerEmail,
+      payload: { orderNumber: order.orderNumber, customerName: order.customerName, paymentMethod, paymentReference, total: order.pricing.total },
+      isTestOrder,
+      emailSettings,
+      now,
+    });
+    const adminEmail = (process.env.ADMIN_NOTIFICATION_EMAIL || '').trim();
+    if (adminEmail) {
+      enqueueAdminPaymentReview(tx, db, {
+        orderId: doc.id,
+        attemptId,
+        adminEmail,
+        payload: { orderNumber: order.orderNumber, customerName: order.customerName, paymentMethod, paymentReference, total: order.pricing.total },
+        isTestOrder,
+        emailSettings,
+        now,
+      });
+    }
 
     return { ok: true, alreadyProcessed: false, paymentStatus: 'pending_review' };
   });

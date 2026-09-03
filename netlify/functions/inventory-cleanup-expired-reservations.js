@@ -17,6 +17,8 @@
 const { schedule } = require('@netlify/functions');
 const { admin, getDb } = require('./_shared/firebaseAdmin');
 const { expireReservationIfDue } = require('./_shared/inventory');
+const { getEmailSettings } = require('./_shared/emailSettings');
+const { enqueueReservationExpired } = require('./_shared/emailOutbox');
 
 async function run() {
   const db = getDb();
@@ -32,18 +34,44 @@ async function run() {
   let expiredCount = 0;
   for (const doc of snap.docs) {
     try {
+      // The reservation doc's own orderId — already on this NON-
+      // transactional snapshot from the query above, so it costs no extra
+      // transactional read to know which order to fetch next.
+      const orderRef = db.collection('orders').doc(doc.data().orderId);
+
       // eslint-disable-next-line no-await-in-loop
       await db.runTransaction(async (tx) => {
+        // Both reads BEFORE any write in this transaction (Firestore's
+        // reads-before-writes rule) — expireReservationIfDue() below reads
+        // the reservation and then, if due, immediately writes it.
+        const orderSnap = await tx.get(orderRef);
+        const emailSettings = await getEmailSettings(db, tx);
+
         const { expiredNow, orderPatch, reservation } = await expireReservationIfDue(tx, db, doc.ref, {
           actorType: 'system',
           actorId: 'scheduled-cleanup',
         });
         if (!expiredNow) return;
-        tx.update(db.collection('orders').doc(reservation.orderId), {
+
+        tx.update(orderRef, {
           inventoryStatus: orderPatch.inventoryStatus,
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
           history: admin.firestore.FieldValue.arrayUnion(orderPatch.historyEntry),
         });
+
+        if (orderSnap.exists) {
+          const order = orderSnap.data();
+          enqueueReservationExpired(tx, db, {
+            orderId: orderRef.id,
+            reservationExpiresAtMs: reservation.expiresAt.toMillis(),
+            recipientEmail: order.customerEmail,
+            payload: { orderNumber: order.orderNumber, customerName: order.customerName },
+            isTestOrder: order.isTest === true,
+            emailSettings,
+            now: admin.firestore.Timestamp.now(),
+          });
+        }
+
         expiredCount += 1;
       });
     } catch (err) {

@@ -8,6 +8,13 @@
  * `order.html#token=...` URL FRAGMENT (never sent to any server) and reads
  * it client-side to build this request body.
  *
+ * Phase 5E: `token` may be EITHER the primary order-access token (64 hex
+ * chars) OR a scoped email access token (always contains a '.') minted by
+ * the scheduled email processor — see _shared/orderTokenAuth.js, which
+ * disambiguates by shape and enforces the 'order:read' scope on the email
+ * path. Every lifecycle email's "View order" link uses that token, since
+ * the server never holds a raw primary token to put in an email.
+ *
  * Returns only sanitized, customer-safe fields — never accessTokenHash,
  * raw Firestore doc/order IDs, reviewedBy, or any other admin/audit field.
  * Image fields are always resolved to public URLs here, server-side —
@@ -17,7 +24,7 @@
 const { getDb } = require('./_shared/firebaseAdmin');
 const { withErrorHandling, ok, fail } = require('./_shared/response');
 const { requireString } = require('./_shared/validation');
-const { isValidAccessToken, hashToken, hashesMatch } = require('./_shared/orderSecurity');
+const { resolveOrderByToken, TOKEN_FIELD_MAX_LENGTH } = require('./_shared/orderTokenAuth');
 const { getPaymentSettings, sanitizePaymentMethodsForCustomer } = require('./_shared/settings');
 const { publicUrl } = require('./_shared/publicUrl');
 
@@ -90,16 +97,12 @@ exports.handler = withErrorHandling(async (event) => {
   if (event.httpMethod !== 'POST') return fail(405, 'Method not allowed.');
 
   const body = JSON.parse(event.body || '{}');
-  const token = requireString(body.token, 'token', { maxLength: 100 });
-  if (!isValidAccessToken(token)) return fail(404, 'Order not found.');
+  const token = requireString(body.token, 'token', { maxLength: TOKEN_FIELD_MAX_LENGTH });
 
   const db = getDb();
-  const hash = hashToken(token);
-  const snap = await db.collection('orders').where('accessTokenHash', '==', hash).limit(1).get();
-  if (snap.empty) return fail(404, 'Order not found.');
-
-  const order = snap.docs[0].data();
-  if (!hashesMatch(hash, order.accessTokenHash)) return fail(404, 'Order not found.');
+  const resolved = await resolveOrderByToken(db, token, 'order:read');
+  if (!resolved.ok) return fail(404, 'Order not found.');
+  const { order } = resolved;
 
   const paymentSettings = await getPaymentSettings(db);
   return ok({ order: sanitizeOrder(order), paymentMethods: sanitizePaymentMethodsForCustomer(paymentSettings) });
