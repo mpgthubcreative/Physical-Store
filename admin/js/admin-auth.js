@@ -53,6 +53,21 @@ async function signOutAndRedirect() {
   location.href = 'login.html';
 }
 
+/**
+ * The current user's Firebase ID token.
+ *
+ * apiFetch() below covers every JSON endpoint. This is for the few cases
+ * that need the raw token because they don't want JSON parsing — notably
+ * the report exports, which return a binary .xlsx/.pdf body that has to be
+ * read as a blob. Exposing the token accessor keeps that one case from
+ * hand-rolling its own auth handling.
+ */
+async function getIdToken() {
+  const user = auth.currentUser;
+  if (!user) throw new Error('Not signed in.');
+  return user.getIdToken();
+}
+
 /** fetch() wrapper that attaches a fresh Firebase ID token and parses the JSON envelope every admin-* function returns. */
 async function apiFetch(path, options = {}) {
   const user = auth.currentUser;
@@ -73,5 +88,5 @@ async function apiFetch(path, options = {}) {
   return data;
 }
 
-export { requireSession, getClaims, signIn, signOutAndRedirect, apiFetch };
-window.AdminAuth = { requireSession, getClaims, signIn, signOutAndRedirect, apiFetch };
+export { requireSession, getClaims, getIdToken, signIn, signOutAndRedirect, apiFetch };
+window.AdminAuth = { requireSession, getClaims, getIdToken, signIn, signOutAndRedirect, apiFetch };

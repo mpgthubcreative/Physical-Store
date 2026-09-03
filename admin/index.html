@@ -23,16 +23,105 @@
         </div>
       </div>
 
-      <!-- Operational queues: what needs the Owner's action right now.
-           Each card is a link straight into the correctly filtered Orders
-           view. Rendered by dashboard.js. -->
+      <!-- ============================================================
+           LIVE OPERATIONAL QUEUES — deliberately NOT affected by the
+           reporting date filter below. These always show what needs
+           action right now.
+           ============================================================ -->
       <div class="admin-section-head">
         <h2>Needs your action</h2>
+        <p>Live right now &mdash; not affected by the report date filter.</p>
       </div>
       <div class="admin-queue-grid" data-operational-queues>
         <div class="admin-queue-card is-clear">
           <div class="admin-queue-card__count">&mdash;</div>
           <div class="admin-queue-card__body"><div class="admin-queue-card__title">Loading…</div></div>
+        </div>
+      </div>
+
+      <!-- ============================================================
+           REPORTING — everything below responds to the date filter.
+           ============================================================ -->
+      <div class="admin-report-divider">
+        <span>Reports</span>
+      </div>
+
+      <div class="admin-card admin-report-controls">
+        <div class="admin-report-presets" role="group" aria-label="Report date range">
+          <button type="button" class="admin-preset is-active" data-preset="today">Today</button>
+          <button type="button" class="admin-preset" data-preset="week">This Week</button>
+          <button type="button" class="admin-preset" data-preset="month">This Month</button>
+          <button type="button" class="admin-preset" data-preset="custom">Custom</button>
+        </div>
+
+        <div class="admin-report-custom" data-custom-range hidden>
+          <div class="admin-field">
+            <label for="rep-from">From</label>
+            <input id="rep-from" type="date" data-report-from />
+          </div>
+          <div class="admin-field">
+            <label for="rep-to">To</label>
+            <input id="rep-to" type="date" data-report-to />
+          </div>
+          <button type="button" class="admin-btn admin-btn--small" data-apply-range>Apply</button>
+        </div>
+
+        <div class="admin-report-toolbar">
+          <div class="admin-report-range" data-report-range-label>&mdash;</div>
+          <div class="admin-report-actions">
+            <label class="admin-switch admin-switch--compact" title="Test orders are excluded from all figures by default.">
+              <input type="checkbox" data-include-test />
+              <span class="admin-switch__track"><span class="admin-switch__thumb"></span></span>
+              <span class="admin-switch__label">Include TEST orders</span>
+            </label>
+            <div class="admin-dropdown" data-download-menu>
+              <button type="button" class="admin-btn admin-btn--small" data-download-toggle aria-haspopup="true" aria-expanded="false">
+                Download Report
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
+              </button>
+              <div class="admin-dropdown__menu" data-download-list hidden>
+                <button type="button" data-export="xlsx">Export Excel (.xlsx)</button>
+                <button type="button" data-export="pdf">Export PDF</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p class="admin-report-note" data-report-note hidden></p>
+      </div>
+
+      <div data-report-body>
+        <p class="admin-loading-line" data-report-loading><span class="admin-btn__spinner"></span> Loading report…</p>
+
+        <div data-report-metrics hidden>
+          <div class="admin-section-head"><h2>Orders</h2></div>
+          <div class="admin-kpi-grid" data-metrics-orders></div>
+
+          <div class="admin-section-head">
+            <h2>Sales</h2>
+            <p>Paid orders only, using each order&rsquo;s stored pricing snapshot.</p>
+          </div>
+          <div class="admin-kpi-grid" data-metrics-sales></div>
+
+          <div class="admin-section-head"><h2>Fulfillment</h2></div>
+          <div class="admin-kpi-grid" data-metrics-fulfillment></div>
+
+          <div class="admin-section-head">
+            <h2>Orders in this range</h2>
+          </div>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Order #</th><th>Date</th><th>Customer</th><th>Destination</th>
+                  <th>Subtotal</th><th>Shipping</th><th>Total</th><th>Payment</th><th>Fulfillment</th>
+                </tr>
+              </thead>
+              <tbody data-report-rows>
+                <tr><td colspan="9" class="admin-empty">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
