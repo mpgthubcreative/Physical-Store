@@ -27,46 +27,19 @@
 const { getDb } = require('./_shared/firebaseAdmin');
 const { requireAdmin } = require('./_shared/adminAuth');
 const { withErrorHandling, ok, fail } = require('./_shared/response');
-
-// The dashboard only names a handful before it becomes noise.
-const MAX_OUT_OF_STOCK_NAMES = 12;
+const { createTimer } = require('./_shared/timing');
+const { fetchCatalogStats } = require('./_shared/dashboardStats');
 
 exports.handler = withErrorHandling(async (event) => {
+  const timer = createTimer();
+
   if (event.httpMethod !== 'GET') return fail(405, 'Method not allowed.');
 
-  const auth = await requireAdmin(event);
+  const auth = await requireAdmin(event, timer);
   if (!auth.ok) return fail(auth.status, auth.error);
 
-  const db = getDb();
+  // Same implementation admin-dashboard.js uses.
+  const stats = await timer.time('queryMs', () => fetchCatalogStats(getDb()));
 
-  const [productsSnap, patchesCount, collectionsCount] = await Promise.all([
-    // Projection: only the three fields needed to compute the counts and
-    // find out-of-stock products.
-    db.collection('products').select('title', 'active', 'variants').get(),
-    db.collection('patches').count().get(),
-    db.collection('collections').count().get(),
-  ]);
-
-  let activeProducts = 0;
-  const outOfStock = [];
-
-  productsSnap.forEach((doc) => {
-    const d = doc.data();
-    if (d.active !== true) return;
-    activeProducts++;
-
-    // Same definition the previous dashboard used: a product counts as out
-    // of stock when every variant's stockQty sums to zero.
-    const totalStock = (d.variants || []).reduce((sum, v) => sum + (Number(v.stockQty) || 0), 0);
-    if (totalStock === 0) outOfStock.push({ id: doc.id, title: d.title || doc.id });
-  });
-
-  return ok({
-    productsActive: activeProducts,
-    productsTotal: productsSnap.size,
-    patches: patchesCount.data().count,
-    collections: collectionsCount.data().count,
-    outOfStockCount: outOfStock.length,
-    outOfStock: outOfStock.slice(0, MAX_OUT_OF_STOCK_NAMES),
-  });
+  return ok({ ...stats, _timing: timer.summary() });
 });

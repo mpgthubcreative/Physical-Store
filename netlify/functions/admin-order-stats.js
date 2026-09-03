@@ -9,31 +9,20 @@
 const { getDb } = require('./_shared/firebaseAdmin');
 const { requireAdmin } = require('./_shared/adminAuth');
 const { withErrorHandling, ok, fail } = require('./_shared/response');
+const { createTimer } = require('./_shared/timing');
+const { fetchOrderStats } = require('./_shared/dashboardStats');
 
 exports.handler = withErrorHandling(async (event) => {
+  const timer = createTimer();
+
   if (event.httpMethod !== 'GET') return fail(405, 'Method not allowed.');
 
-  const auth = await requireAdmin(event);
+  const auth = await requireAdmin(event, timer);
   if (!auth.ok) return fail(auth.status, auth.error);
 
-  const db = getDb();
-  const orders = db.collection('orders');
+  // Same implementation admin-dashboard.js uses — one definition of what
+  // counts as "to review" and "to fulfil".
+  const stats = await timer.time('queryMs', () => fetchOrderStats(getDb()));
 
-  const [pendingReview, paidUnfulfilled, paidProcessing, total] = await Promise.all([
-    orders.where('paymentStatus', '==', 'pending_review').count().get(),
-    orders.where('paymentStatus', '==', 'paid').where('fulfillmentStatus', '==', 'unfulfilled').count().get(),
-    orders.where('paymentStatus', '==', 'paid').where('fulfillmentStatus', '==', 'processing').count().get(),
-    orders.count().get(),
-  ]);
-
-  return ok({
-    pendingReviewCount: pendingReview.data().count,
-    // Everything paid that isn't finished yet — the Owner's whole open
-    // fulfillment workload.
-    paidAwaitingProcessingCount: paidUnfulfilled.data().count + paidProcessing.data().count,
-    // Just the not-yet-started slice, so the dashboard's "Orders to Fulfill"
-    // queue can link to exactly paid + unfulfilled.
-    paidUnfulfilledCount: paidUnfulfilled.data().count,
-    totalOrdersCount: total.data().count,
-  });
+  return ok({ ...stats, _timing: timer.summary() });
 });

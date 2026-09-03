@@ -26,13 +26,16 @@
 const { admin, getDb } = require('./_shared/firebaseAdmin');
 const { requireAdmin } = require('./_shared/adminAuth');
 const { withErrorHandling, ok, fail } = require('./_shared/response');
+const { createTimer } = require('./_shared/timing');
 const { resolveRange } = require('./_shared/reportRange');
 const { fetchReportOrders, buildSummary, MAX_REPORT_ORDERS } = require('./_shared/reportData');
 
 exports.handler = withErrorHandling(async (event) => {
+  const timer = createTimer();
+
   if (event.httpMethod !== 'GET') return fail(405, 'Method not allowed.');
 
-  const auth = await requireAdmin(event);
+  const auth = await requireAdmin(event, timer);
   if (!auth.ok) return fail(auth.status, auth.error);
 
   const params = event.queryStringParameters || {};
@@ -49,10 +52,8 @@ exports.handler = withErrorHandling(async (event) => {
   });
 
   const db = getDb();
-  const { orders, truncated, testOrderCount, fetchedCount } = await fetchReportOrders(
-    db,
-    { startUtcMs: range.startUtcMs, endUtcMs: range.endUtcMs, includeTest },
-    admin
+  const { orders, truncated, testOrderCount, fetchedCount } = await timer.time('queryMs', () =>
+    fetchReportOrders(db, { startUtcMs: range.startUtcMs, endUtcMs: range.endUtcMs, includeTest }, admin)
   );
 
   const summary = buildSummary(orders);
@@ -77,5 +78,6 @@ exports.handler = withErrorHandling(async (event) => {
       truncated,
       maxOrders: MAX_REPORT_ORDERS,
     },
+    _timing: timer.summary(),
   });
 });

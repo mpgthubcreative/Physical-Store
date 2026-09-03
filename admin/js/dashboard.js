@@ -191,29 +191,42 @@ function reportQuery() {
   return params.toString();
 }
 
+function renderReport(report) {
+  lastReport = report;
+  $('[data-report-range-label]').textContent = report.range.label;
+  renderMetrics(report);
+  renderReportRows(report);
+  renderReportNote(report);
+  $('[data-report-loading]').hidden = true;
+  $('[data-report-metrics]').hidden = false;
+}
+
+function reportError(message) {
+  $('[data-report-loading]').hidden = true;
+  const note = $('[data-report-note]');
+  note.hidden = false;
+  note.className = 'admin-report-note is-error';
+  note.textContent = message;
+}
+
+/*
+ * Re-fetching after a filter change hits /api/admin-report on its own.
+ *
+ * Only the FIRST paint uses the consolidated /api/admin-dashboard, because
+ * that is where three authenticated round trips used to stack up. Changing
+ * a date preset does not need the operational queues or the catalog counts
+ * re-read — those have not changed — so a filter change deliberately asks
+ * for the report alone.
+ */
 async function loadReport() {
   const loading = $('[data-report-loading]');
-  const metrics = $('[data-report-metrics]');
   loading.hidden = false;
-  metrics.hidden = true;
+  $('[data-report-metrics]').hidden = true;
 
   try {
-    const report = await apiFetch('/api/admin-report?' + reportQuery());
-    lastReport = report;
-
-    $('[data-report-range-label]').textContent = report.range.label;
-    renderMetrics(report);
-    renderReportRows(report);
-    renderReportNote(report);
-
-    loading.hidden = true;
-    metrics.hidden = false;
+    renderReport(await apiFetch('/api/admin-report?' + reportQuery()));
   } catch (err) {
-    loading.hidden = true;
-    const note = $('[data-report-note]');
-    note.hidden = false;
-    note.className = 'admin-report-note is-error';
-    note.textContent = err.message;
+    reportError(err.message);
   }
 }
 
@@ -380,24 +393,45 @@ function renderAttention({ lowStockProducts, total }) {
    Boot
 --------------------------------------------------------------------- */
 
+function renderOrderStats(orderStats) {
+  renderOperationalQueues({
+    pendingReviewCount: orderStats.pendingReviewCount,
+    paidUnfulfilledCount: orderStats.paidUnfulfilledCount ?? orderStats.paidAwaitingProcessingCount,
+  });
+  setKpi('[data-count-total-orders]', orderStats.totalOrdersCount);
+}
+
+function renderCatalogStats(stats) {
+  setKpi('[data-count-products]', stats.productsActive);
+  document.querySelector('[data-count-products-sub]').textContent = `${stats.productsTotal} total`;
+  setKpi('[data-count-patches]', stats.patches);
+  setKpi('[data-count-collections]', stats.collections);
+  setKpi('[data-count-lowstock]', stats.outOfStockCount);
+  renderAttention({ lowStockProducts: stats.outOfStock, total: stats.outOfStockCount });
+}
+
 /*
- * The Dashboard makes exactly THREE API calls, all issued in parallel:
+ * The Dashboard's first paint is ONE authenticated request.
  *
- *   /api/admin-report        — the date-filtered reporting section
- *   /api/admin-order-stats   — the live operational queues (count() only)
- *   /api/admin-catalog-stats — the "At a glance" numbers (count() + a
- *                              projected products read)
+ * It used to be three (/api/admin-report, /api/admin-order-stats,
+ * /api/admin-catalog-stats) fired in parallel. Measured on production they
+ * came back in 3.71s / 3.66s / 3.67s with 609 B / 256 B / 172 B bodies —
+ * three unrelated queries taking the same time while returning almost
+ * nothing, which is a fixed per-invocation cost paid three times, not slow
+ * queries. Netlify gives each function its own Lambda instance, and each
+ * was independently loading firebase-admin (which pulls in
+ * @google-cloud/firestore, ~1s to require), building a Firestore gRPC
+ * client, fetching Google's token-signing keys, and re-reading the
+ * adminUsers status doc.
  *
- * It deliberately does NOT call admin-list-products / admin-list-patches /
- * admin-list-collections. Those are CATALOG EDITOR endpoints that read
- * whole collections and return full records; the Dashboard only ever needed
- * counts from them. It also no longer calls admin-list-orders — the report
- * table below already lists orders for the selected range, so a second
- * "recent orders" table was one extra round trip for duplicate information.
+ * /api/admin-dashboard does that once and runs the three Firestore reads
+ * concurrently inside a single invocation.
  *
- * Nothing is awaited sequentially: a slow catalog read can no longer delay
- * the operational queues, and vice versa. Each section renders as soon as
- * its own request lands.
+ * Only the FIRST paint is consolidated. Changing a date filter still calls
+ * /api/admin-report alone — the queues and catalog counts have not changed
+ * and do not need re-reading. Orders, Order Detail, Settings and Team are
+ * untouched: they already use exactly one endpoint each, and this is not a
+ * move toward one giant Admin API.
  */
 async function init() {
   await requireSession();
@@ -405,34 +439,28 @@ async function init() {
 
   initReportControls();
 
-  // Fire all three immediately, render each independently. No await chain,
-  // so the three round trips overlap instead of stacking.
-  loadReport();
+  try {
+    const data = await apiFetch('/api/admin-dashboard?' + reportQuery());
 
-  apiFetch('/api/admin-order-stats')
-    .then((orderStats) => {
-      renderOperationalQueues({
-        pendingReviewCount: orderStats.pendingReviewCount,
-        paidUnfulfilledCount: orderStats.paidUnfulfilledCount ?? orderStats.paidAwaitingProcessingCount,
-      });
-      setKpi('[data-count-total-orders]', orderStats.totalOrdersCount);
-    })
-    .catch((err) => {
-      console.error('Order stats failed:', err);
-      $('[data-operational-queues]').innerHTML =
-        '<div class="admin-inline-note admin-inline-note--danger">Could not load the operational queues. Refresh to try again.</div>';
-    });
+    // Priority order: operational queues first — that is the daily workflow.
+    renderOrderStats(data.orderStats);
+    renderReport(data);
 
-  apiFetch('/api/admin-catalog-stats')
-    .then((stats) => {
-      setKpi('[data-count-products]', stats.productsActive);
-      document.querySelector('[data-count-products-sub]').textContent = `${stats.productsTotal} total`;
-      setKpi('[data-count-patches]', stats.patches);
-      setKpi('[data-count-collections]', stats.collections);
-      setKpi('[data-count-lowstock]', stats.outOfStockCount);
-      renderAttention({ lowStockProducts: stats.outOfStock, total: stats.outOfStockCount });
-    })
-    .catch((err) => console.error('Catalog stats failed:', err));
+    if (data.catalogStats) {
+      renderCatalogStats(data.catalogStats);
+    } else {
+      // The server lets catalog stats fail without failing the dashboard.
+      // Fetch them separately rather than leaving the tiles blank.
+      apiFetch('/api/admin-catalog-stats').then(renderCatalogStats).catch((err) => console.error('Catalog stats failed:', err));
+    }
+
+    if (data._timing) console.info('[dashboard timing]', data._timing);
+  } catch (err) {
+    console.error('Dashboard load failed:', err);
+    reportError(err.message);
+    $('[data-operational-queues]').innerHTML =
+      '<div class="admin-inline-note admin-inline-note--danger">Could not load the dashboard. Refresh to try again.</div>';
+  }
 }
 
 init();

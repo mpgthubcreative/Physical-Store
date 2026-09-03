@@ -35,8 +35,23 @@ function extractBearerToken(event) {
 /**
  * Core verification shared by requireAdmin/requireOwner. Returns
  * { ok: true, uid, email, role } or { ok: false, status, error }.
+ *
+ * `timer` is optional (see _shared/timing.js). When supplied, the two
+ * distinct costs here are measured SEPARATELY, because they are very
+ * different things and only one of them is a Firestore query:
+ *
+ *   authVerifyTokenMs  — verifyIdToken(). On the first call in a Lambda
+ *                        instance this also fetches Google's public signing
+ *                        keys over the network; afterwards it is local
+ *                        signature verification against a cached key set.
+ *   authStatusReadMs   — the adminUsers/{uid} point read. This is the first
+ *                        Firestore call in most handlers, so it also pays
+ *                        the one-time gRPC client construction and channel
+ *                        setup for the whole instance.
+ *
+ * Only durations are recorded — never the token, uid, or email.
  */
-async function verifyAdminToken(event) {
+async function verifyAdminToken(event, timer) {
     const token = extractBearerToken(event);
     if (!token) {
         return { ok: false, status: 401, error: 'Missing authorization.' };
@@ -44,7 +59,9 @@ async function verifyAdminToken(event) {
 
     let decoded;
     try {
-        decoded = await getAdminAuth().verifyIdToken(token);
+        decoded = timer
+            ? await timer.time('authVerifyTokenMs', () => getAdminAuth().verifyIdToken(token))
+            : await getAdminAuth().verifyIdToken(token);
     } catch (err) {
         return { ok: false, status: 401, error: 'Invalid or expired session. Please sign in again.' };
     }
@@ -55,10 +72,12 @@ async function verifyAdminToken(event) {
 
     // Fail-open if no adminUsers doc exists yet — absence of the doc is not
     // itself a reason to lock someone out; only an explicit status:
-    // 'disabled' blocks access.
+    // 'disabled' blocks access. This check stays: it is what actually
+    // enforces a disabled Admin, independently of token freshness.
     let disabled = false;
     try {
-        const snap = await getDb().collection('adminUsers').doc(decoded.uid).get();
+        const readStatus = () => getDb().collection('adminUsers').doc(decoded.uid).get();
+        const snap = timer ? await timer.time('authStatusReadMs', readStatus) : await readStatus();
         if (snap.exists && snap.data().status === 'disabled') {
             disabled = true;
         }
@@ -80,8 +99,8 @@ async function verifyAdminToken(event) {
  * Returns { ok: true, uid, email, role } or { ok: false, status, error }.
  * Use for every action both Owner and Admin may perform.
  */
-async function requireAdmin(event) {
-    return verifyAdminToken(event);
+async function requireAdmin(event, timer) {
+    return verifyAdminToken(event, timer);
 }
 
 /**
@@ -90,8 +109,8 @@ async function requireAdmin(event) {
  * trust a role value from the request itself — this only ever reads the
  * role out of the verified ID token's custom claims.
  */
-async function requireOwner(event) {
-    const result = await verifyAdminToken(event);
+async function requireOwner(event, timer) {
+    const result = await verifyAdminToken(event, timer);
     if (!result.ok) return result;
     if (result.role !== 'owner') {
         return { ok: false, status: 403, error: 'This action is restricted to the Owner account.' };

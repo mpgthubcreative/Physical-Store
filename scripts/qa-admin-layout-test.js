@@ -102,6 +102,14 @@ function makeOrders(n) {
 }
 
 const API = {
+  // The Dashboard's first paint is one consolidated call; the report-only
+  // endpoint is still used when a date filter changes.
+  '/api/admin-dashboard': () => ({
+    orderStats: { pendingReviewCount: 12, paidAwaitingProcessingCount: 8, paidUnfulfilledCount: 5, totalOrdersCount: 1247 },
+    ...API['/api/admin-report'](),
+    catalogStats: API['/api/admin-catalog-stats'](),
+    _timing: { cold: false, uptimeAtStartMs: 1200, authVerifyTokenMs: 40, authStatusReadMs: 55, firestoreConcurrentMs: 180, totalHandlerMs: 280 },
+  }),
   '/api/admin-report': () => {
     const orders = makeOrders(14);
     return {
