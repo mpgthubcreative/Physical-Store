@@ -28,7 +28,12 @@ exports.handler = withErrorHandling(async (event) => {
 
   return ok({
     pendingReviewCount: pendingReview.data().count,
+    // Everything paid that isn't finished yet — the Owner's whole open
+    // fulfillment workload.
     paidAwaitingProcessingCount: paidUnfulfilled.data().count + paidProcessing.data().count,
+    // Just the not-yet-started slice, so the dashboard's "Orders to Fulfill"
+    // queue can link to exactly paid + unfulfilled.
+    paidUnfulfilledCount: paidUnfulfilled.data().count,
     totalOrdersCount: total.data().count,
   });
 });

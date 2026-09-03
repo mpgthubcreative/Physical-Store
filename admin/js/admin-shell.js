@@ -8,6 +8,7 @@ const ICONS = {
   patches: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 6v6c0 5 3.4 8.7 8 10 4.6-1.3 8-5 8-10V6l-8-4Z"/></svg>',
   collections: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5M3 17l9 5 9-5"/></svg>',
   team: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="18" cy="8.5" r="2.6"/><path d="M16 14.5a5.2 5.2 0 0 1 5.5 5.2"/></svg>',
+  settings: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>',
 };
 
 const NAV_LINKS = [
@@ -17,6 +18,12 @@ const NAV_LINKS = [
   { key: 'patches', label: 'Patches', href: 'patches.html', icon: ICONS.patches },
   { key: 'collections', label: 'Collections', href: 'collections.html', icon: ICONS.collections },
 ];
+
+// Settings sits below the catalog links, above Team — both Owner and Admin
+// can open it (an Admin manages shipping rates there), but the Payments tab
+// disables its own controls for a non-Owner and every save is
+// independently re-authorized server-side.
+const SETTINGS_LINK = { key: 'settings', label: 'Settings', href: 'settings.html', icon: ICONS.settings };
 
 function initials(email) {
   if (!email) return '?';
@@ -34,7 +41,10 @@ export async function renderAdminShell(activeKey) {
   // The Team nav link is never inserted into the DOM at all for a non-Owner
   // — this is UX only, not the real enforcement. Every Team API independently
   // calls requireOwner() server-side regardless of what the client sends.
-  const navLinks = claims.role === 'owner' ? [...NAV_LINKS, { key: 'team', label: 'Team', href: 'team.html', icon: ICONS.team }] : NAV_LINKS;
+  const navLinks =
+    claims.role === 'owner'
+      ? [...NAV_LINKS, SETTINGS_LINK, { key: 'team', label: 'Team', href: 'team.html', icon: ICONS.team }]
+      : [...NAV_LINKS, SETTINGS_LINK];
   const active = navLinks.find((l) => l.key === activeKey);
 
   const sidebarMount = document.getElementById('admin-sidebar');

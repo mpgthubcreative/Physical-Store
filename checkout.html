@@ -38,20 +38,27 @@
         <div class="checkout-section">
           <h2 class="checkout-section__heading">Delivery</h2>
           <div class="checkout-delivery-options" data-delivery-options>
-            <label class="checkout-radio">
+            <label class="checkout-radio" data-pickup-radio-wrap>
               <input type="radio" name="deliveryMethod" value="pickup" checked />
-              Pickup
+              Pickup <span data-pickup-fee-label></span>
             </label>
             <label class="checkout-radio" data-delivery-radio-wrap hidden>
               <input type="radio" name="deliveryMethod" value="delivery" />
-              Delivery <span data-delivery-fee-label></span>
+              Delivery
             </label>
           </div>
           <p class="field-hint" data-delivery-unavailable-note hidden>Delivery isn't available yet — pickup only for now.</p>
 
           <div data-delivery-address-fields hidden>
             <div class="field">
-              <label for="co-addr1">Address line 1</label>
+              <label for="co-region">Delivery region</label>
+              <select id="co-region" name="destinationRegion" data-region-select>
+                <option value="">Select a region…</option>
+              </select>
+              <span class="field-hint">Shipping is a flat rate per region. The exact amount is confirmed by us when your order is created.</span>
+            </div>
+            <div class="field">
+              <label for="co-addr1">Address line</label>
               <input id="co-addr1" name="line1" type="text" maxlength="200" />
             </div>
             <div class="field">
@@ -59,7 +66,11 @@
               <input id="co-addr2" name="line2" type="text" maxlength="200" />
             </div>
             <div class="field">
-              <label for="co-city">City</label>
+              <label for="co-barangay">Barangay</label>
+              <input id="co-barangay" name="barangay" type="text" maxlength="100" />
+            </div>
+            <div class="field">
+              <label for="co-city">City / Municipality</label>
               <input id="co-city" name="city" type="text" maxlength="100" />
             </div>
             <div class="field">
@@ -78,6 +89,7 @@
           <textarea name="orderNotes" maxlength="500" data-order-notes></textarea>
         </div>
 
+        <div class="checkout-closed-note" data-checkout-closed hidden></div>
         <button type="submit" class="btn-coral checkout-submit-btn" data-submit-order>Place order</button>
         <p class="form-note is-error" data-checkout-error></p>
       </form>
@@ -90,13 +102,14 @@
           <span data-checkout-subtotal>&mdash;</span>
         </div>
         <div class="checkout-summary__row">
-          <span>Shipping</span>
+          <span data-checkout-shipping-label>Shipping</span>
           <span data-checkout-shipping>&mdash;</span>
         </div>
         <div class="checkout-summary__row checkout-summary__row--total">
-          <span>Total</span>
+          <span>Total to Pay</span>
           <span data-checkout-total>&mdash;</span>
         </div>
+        <p class="field-hint" style="margin-top:10px;">Final amounts are confirmed by Buddy when your order is created.</p>
       </aside>
     </div>
   </div>

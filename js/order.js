@@ -33,8 +33,26 @@
     return params.get('token');
   }
 
+  const REGION_LABELS = { luzon: 'Luzon', visayas: 'Visayas', mindanao: 'Mindanao' };
+
   function fmt(n) {
     return window.BuddyCart.format(n);
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  /**
+   * How the shipping line reads. Orders placed before Phase 5D.2 have no
+   * destinationRegion — those just say "Shipping", never "undefined".
+   */
+  function shippingLabel(order) {
+    if (order.deliveryMethod === 'pickup') return 'Shipping — Pickup';
+    if (order.destinationRegion && REGION_LABELS[order.destinationRegion]) {
+      return 'Shipping — ' + REGION_LABELS[order.destinationRegion];
+    }
+    return 'Shipping';
   }
 
   async function loadOrder(token) {
@@ -81,7 +99,7 @@
     });
   }
 
-  function renderPaymentSection(order, paymentMethods, token, onUpdated) {
+  function renderPaymentSection(order, paymentMethods, token, onUpdated, justSubmitted) {
     const section = document.querySelector('[data-payment-section]');
     section.innerHTML = '';
 
@@ -92,7 +110,16 @@
       return;
     }
     if (order.paymentStatus === 'pending_review') {
-      section.innerHTML = '<p class="order-status-msg">We\'re reviewing your payment. This page will update once it\'s confirmed.</p>';
+      // Right after a successful submit, lead with an explicit confirmation
+      // rather than the neutral standing message — the customer needs to
+      // know their submission landed and what happens next.
+      section.innerHTML = justSubmitted
+        ? '<div class="payment-submitted">' +
+          '<h2 class="payment-submitted__title">Payment submitted for review</h2>' +
+          '<p>Thanks! We\'ve received your payment details. Buddy will verify your reference number against our records and confirm your order — this is a manual check, so please allow a little time.</p>' +
+          '<p>You can come back to this page any time using the same link to see the latest status.</p>' +
+          '</div>'
+        : '<p class="order-status-msg">We\'re reviewing your payment. This page will update once it\'s confirmed.</p>';
       return;
     }
 
@@ -152,15 +179,34 @@
       return;
     }
 
+    // The amount owed, stated once and unmissably, so the customer transfers
+    // the right total (items + shipping) rather than just the item subtotal.
+    const amountDue = document.createElement('div');
+    amountDue.className = 'payment-amount-due';
+    amountDue.innerHTML =
+      '<div class="payment-amount-due__label">Amount to Pay</div>' +
+      '<div class="payment-amount-due__value">' + fmt(order.pricing.total) + '</div>' +
+      '<div class="payment-amount-due__break">' +
+      '<span>Items ' + fmt(order.pricing.subtotal) + '</span>' +
+      '<span>' + (order.pricing.shippingFee > 0 ? 'Shipping ' + fmt(order.pricing.shippingFee) : 'Free shipping') + '</span>' +
+      '</div>' +
+      '<p class="payment-amount-due__note">Please send this exact amount, then enter your reference number below.</p>';
+    section.appendChild(amountDue);
+
     const instructions = document.createElement('div');
     instructions.innerHTML = paymentMethods
       .map(
         (m) =>
-          '<div class="payment-method-card"><h3>' + m.label + '</h3>' +
-          (m.bankName ? '<p>Bank: ' + m.bankName + '</p>' : '') +
-          (m.accountName ? '<p>Account name: ' + m.accountName + '</p>' : '') +
-          (m.accountNumber ? '<p>Account number: ' + m.accountNumber + '</p>' : '') +
-          (m.instructions ? '<p>' + m.instructions + '</p>' : '') +
+          '<div class="payment-method-card"><h3>' + escapeHtml(m.label) + '</h3>' +
+          (m.bankName ? '<p>Bank: <strong>' + escapeHtml(m.bankName) + '</strong></p>' : '') +
+          (m.accountName ? '<p>Account name: <strong>' + escapeHtml(m.accountName) + '</strong></p>' : '') +
+          (m.accountNumber ? '<p>Account number: <strong>' + escapeHtml(m.accountNumber) + '</strong></p>' : '') +
+          (m.instructions ? '<p>' + escapeHtml(m.instructions) + '</p>' : '') +
+          // Rendered only when the Owner has actually uploaded one — a
+          // method with no QR simply shows its account details.
+          (m.qrImageUrl
+            ? '<img class="payment-qr" src="' + escapeHtml(m.qrImageUrl) + '" alt="' + escapeHtml(m.label) + ' QR code" loading="lazy" />'
+            : '') +
           '</div>'
       )
       .join('');
@@ -207,7 +253,9 @@
           submitBtn.disabled = false;
           return;
         }
-        onUpdated();
+        // true -> render the explicit "Payment submitted for review"
+        // confirmation rather than the neutral standing message.
+        onUpdated(true);
       } catch (err) {
         errorEl.textContent = 'Network error — please try again.';
         submitBtn.disabled = false;
@@ -230,7 +278,7 @@
       return;
     }
 
-    async function refreshAndRender() {
+    async function refreshAndRender(justSubmitted) {
       const data = await loadOrder(token);
       if (!data) {
         loading.hidden = true;
@@ -243,15 +291,30 @@
       const { order, paymentMethods } = data;
       document.querySelector('[data-order-number]').textContent = order.orderNumber;
       document.querySelector('[data-order-status-badge]').textContent = STATUS_LABELS[order.paymentStatus] || order.paymentStatus;
+
+      // Always the order's own frozen snapshot — an order placed when
+      // Luzon cost ₱150 keeps showing ₱150 forever.
       document.querySelector('[data-order-subtotal]').textContent = fmt(order.pricing.subtotal);
+      document.querySelector('[data-order-shipping-label]').textContent = shippingLabel(order);
       document.querySelector('[data-order-shipping]').textContent = order.pricing.shippingFee > 0 ? fmt(order.pricing.shippingFee) : 'Free';
       document.querySelector('[data-order-total]').textContent = fmt(order.pricing.total);
 
+      // Once shipped, show how it went out.
+      const shipmentEl = document.querySelector('[data-shipment-info]');
+      if (order.courier) {
+        shipmentEl.innerHTML =
+          '<p class="order-status-msg">Shipped via <strong>' + escapeHtml(order.courier) + '</strong>' +
+          (order.trackingNumber ? ' — tracking <strong>' + escapeHtml(order.trackingNumber) + '</strong>' : '') +
+          '.</p>';
+      } else {
+        shipmentEl.innerHTML = '';
+      }
+
       renderLines(order);
-      renderPaymentSection(order, paymentMethods, token, refreshAndRender);
+      renderPaymentSection(order, paymentMethods, token, refreshAndRender, justSubmitted);
     }
 
-    await refreshAndRender();
+    await refreshAndRender(false);
   }
 
   init();

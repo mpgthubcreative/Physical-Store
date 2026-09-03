@@ -1,6 +1,6 @@
 import { requireSession, apiFetch } from './admin-auth.js';
 import { renderAdminShell } from './admin-shell.js';
-import { PAYMENT_STATUS, FULFILLMENT_STATUS, statusBadge, fmtMoney, fmtDate, escapeHtml } from './admin-format.js';
+import { PAYMENT_STATUS, FULFILLMENT_STATUS, statusBadge, destinationShort, fmtMoney, fmtDate, escapeHtml } from './admin-format.js';
 
 let orders = [];
 let nextCursor = null;
@@ -9,7 +9,7 @@ function renderRows() {
   const tbody = document.querySelector('[data-order-rows]');
   if (!orders.length) {
     tbody.innerHTML = `
-      <tr><td colspan="7">
+      <tr><td colspan="8">
         <div class="admin-empty-state">
           <div class="admin-empty-state__title">No orders match these filters</div>
           <div class="admin-empty-state__desc">Try a different payment or fulfillment status, or clear the filters.</div>
@@ -28,6 +28,7 @@ function renderRows() {
           <div class="admin-row-sub">${escapeHtml(o.customerEmail)}</div>
         </div>
       </td>
+      <td data-role="meta" data-label="Destination">${destinationShort(o)}</td>
       <td data-role="meta" data-label="Date">${fmtDate(o.createdAt)}</td>
       <td data-role="meta" data-label="Total">${fmtMoney(o.total)}</td>
       <td data-role="meta" data-label="Payment">${statusBadge(PAYMENT_STATUS, o.paymentStatus)}</td>
@@ -49,7 +50,7 @@ async function loadOrders(reset) {
   if (reset) {
     orders = [];
     nextCursor = null;
-    document.querySelector('[data-order-rows]').innerHTML = '<tr><td colspan="7" class="admin-empty">Loading…</td></tr>';
+    document.querySelector('[data-order-rows]').innerHTML = '<tr><td colspan="8" class="admin-empty">Loading…</td></tr>';
   }
   const params = new URLSearchParams();
   params.set('limit', '20');
@@ -74,10 +75,14 @@ async function init() {
   await requireSession();
   await renderAdminShell('orders');
 
-  // Pre-select a filter when arriving from a dashboard "Attention needed" link.
+  // Pre-select filters when arriving from a dashboard operational queue
+  // card. Both filters are honoured, so "Orders to Fulfill" can open
+  // exactly paid + unfulfilled rather than just paid.
   const params = new URLSearchParams(location.search);
   const paymentStatus = params.get('paymentStatus');
+  const fulfillmentStatus = params.get('fulfillmentStatus');
   if (paymentStatus) document.querySelector('[data-filter-payment]').value = paymentStatus;
+  if (fulfillmentStatus) document.querySelector('[data-filter-fulfillment]').value = fulfillmentStatus;
 
   await loadOrders(true);
 }

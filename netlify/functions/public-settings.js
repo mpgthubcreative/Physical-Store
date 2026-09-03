@@ -18,13 +18,21 @@ exports.handler = withErrorHandling(async (event) => {
   const [shipping, payment] = await Promise.all([getShippingSettings(db), getPaymentSettings(db)]);
 
   return ok({
+    // Display values only. checkout.html uses these to SHOW the customer
+    // what shipping will cost before they submit — the number that is
+    // actually charged is computed independently by create-order.js from
+    // these same Firestore settings and is never read from the request.
     shipping: {
       deliveryEnabled: shipping.deliveryEnabled,
-      flatRateDelivery: shipping.flatRateDelivery,
-      freeShippingThreshold: shipping.freeShippingThreshold,
       pickupEnabled: shipping.pickupEnabled,
       pickupFee: shipping.pickupFee,
+      freeShippingThreshold: shipping.freeShippingThreshold,
+      rates: shipping.rates,
     },
+    // Whether the store can currently accept an order at all. The customer
+    // page uses this to explain itself instead of letting someone fill in a
+    // whole checkout form only to be refused on submit.
+    checkoutEnabled: payment.checkoutEnabled,
     paymentMethods: sanitizePaymentMethodsForCustomer(payment),
   });
 });

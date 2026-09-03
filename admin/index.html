@@ -23,19 +23,23 @@
         </div>
       </div>
 
+      <!-- Operational queues: what needs the Owner's action right now.
+           Each card is a link straight into the correctly filtered Orders
+           view. Rendered by dashboard.js. -->
+      <div class="admin-section-head">
+        <h2>Needs your action</h2>
+      </div>
+      <div class="admin-queue-grid" data-operational-queues>
+        <div class="admin-queue-card is-clear">
+          <div class="admin-queue-card__count">&mdash;</div>
+          <div class="admin-queue-card__body"><div class="admin-queue-card__title">Loading…</div></div>
+        </div>
+      </div>
+
+      <div class="admin-section-head">
+        <h2>At a glance</h2>
+      </div>
       <div class="admin-kpi-grid">
-        <div class="admin-kpi">
-          <div class="admin-kpi__top">
-            <span class="admin-kpi__label">Pending payment reviews</span>
-          </div>
-          <div class="admin-kpi__value is-loading" data-count-pending-review>&mdash;</div>
-        </div>
-        <div class="admin-kpi">
-          <div class="admin-kpi__top">
-            <span class="admin-kpi__label">Paid, awaiting processing</span>
-          </div>
-          <div class="admin-kpi__value is-loading" data-count-paid-awaiting>&mdash;</div>
-        </div>
         <div class="admin-kpi">
           <div class="admin-kpi__top">
             <span class="admin-kpi__label">Total orders</span>
@@ -75,16 +79,16 @@
       <div class="admin-table-wrap">
         <table class="admin-table">
           <thead>
-            <tr><th>Order #</th><th>Customer</th><th>Total</th><th>Payment</th><th>Fulfillment</th><th>Date</th><th></th></tr>
+            <tr><th>Order #</th><th>Customer</th><th>Destination</th><th>Total</th><th>Payment</th><th>Fulfillment</th><th>Date</th><th></th></tr>
           </thead>
           <tbody data-recent-orders>
-            <tr><td colspan="7" class="admin-empty">Loading…</td></tr>
+            <tr><td colspan="8" class="admin-empty">Loading…</td></tr>
           </tbody>
         </table>
       </div>
 
       <div class="admin-section-head">
-        <h2>Attention needed</h2>
+        <h2>Inventory attention</h2>
       </div>
       <div class="admin-card" data-attention-card>
         <p class="admin-loading-line"><span class="admin-btn__spinner"></span> Loading…</p>

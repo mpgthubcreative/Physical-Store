@@ -401,3 +401,171 @@ body { background: var(--panel); }
 .admin-timeline-item:last-child { border-bottom: none; }
 .admin-timeline-item__action { font-weight: 700; color: var(--ink); }
 .admin-timeline-item__meta { color: var(--ink-faint); font-size: 12.5px; margin-top: 2px; }
+
+/* =====================================================================
+   Phase 5D.2 — Settings, and the operational Order Detail sections
+   ===================================================================== */
+
+/* ---- Tabs (Settings: Payments | Shipping) ---- */
+.admin-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 22px; overflow-x: auto; }
+.admin-tab {
+  border: none; background: none; cursor: pointer; white-space: nowrap;
+  padding: 11px 18px; font: 700 14px var(--font-body); color: var(--ink-muted);
+  border-bottom: 2.5px solid transparent; margin-bottom: -1px; border-radius: 8px 8px 0 0;
+}
+.admin-tab:hover { background: var(--panel); color: var(--ink); }
+.admin-tab.is-active { color: var(--teal); border-bottom-color: var(--teal); }
+
+/* ---- Store status banner (CHECKOUT LIVE / CHECKOUT DISABLED) ----
+   Deliberately the loudest thing on the Settings page: the Owner must
+   never have to infer whether the store is taking real money. */
+.admin-store-status {
+  display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+  border-radius: var(--admin-radius-card); padding: 18px 22px; margin-bottom: 22px;
+  border: 1.5px solid transparent;
+}
+.admin-store-status.is-live { background: var(--admin-positive-bg); border-color: #A9DDB5; }
+.admin-store-status.is-disabled { background: var(--admin-neutral-bg); border-color: var(--border); }
+.admin-store-status__badge {
+  font: 800 12.5px var(--font-body); letter-spacing: .06em; padding: 8px 14px;
+  border-radius: 999px; white-space: nowrap; flex: none;
+}
+.admin-store-status.is-live .admin-store-status__badge { background: var(--admin-positive-fg); color: #fff; }
+.admin-store-status.is-disabled .admin-store-status__badge { background: var(--ink-muted); color: #fff; }
+.admin-store-status__body { min-width: 0; flex: 1 1 260px; }
+.admin-store-status__title { font: 700 15px var(--font-heading); color: var(--ink); }
+.admin-store-status__desc { font: 500 13px var(--font-body); color: var(--ink-muted); margin-top: 3px; }
+
+/* ---- Toggle switch ---- */
+.admin-switch { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font: 700 13.5px var(--font-body); color: var(--ink); }
+.admin-switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+.admin-switch__track {
+  width: 42px; height: 24px; border-radius: 999px; background: #CFD8D6; flex: none;
+  position: relative; transition: background .16s ease;
+}
+.admin-switch__thumb {
+  position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%;
+  background: #fff; box-shadow: var(--admin-shadow-sm); transition: transform .16s ease;
+}
+.admin-switch input:checked + .admin-switch__track { background: var(--teal); }
+.admin-switch input:checked + .admin-switch__track .admin-switch__thumb { transform: translateX(18px); }
+.admin-switch input:focus-visible + .admin-switch__track { outline: 2px solid var(--teal); outline-offset: 2px; }
+.admin-switch input:disabled + .admin-switch__track { opacity: .45; cursor: not-allowed; }
+.admin-switch--large .admin-switch__track { width: 52px; height: 30px; }
+.admin-switch--large .admin-switch__thumb { width: 24px; height: 24px; }
+.admin-switch--large input:checked + .admin-switch__track .admin-switch__thumb { transform: translateX(22px); }
+.admin-switch--large .admin-switch__label { font-size: 15px; }
+
+.admin-method-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 8px; }
+.admin-card--danger-zone { border-color: #F2C6C0; background: #FFFCFB; }
+
+/* ---- Inline notes ---- */
+.admin-inline-note { border-radius: var(--admin-radius-sm); padding: 13px 16px; font: 500 13.5px var(--font-body); line-height: 1.55; }
+.admin-inline-note--info { background: var(--admin-info-bg); color: var(--admin-info-fg); }
+.admin-inline-note--warning { background: var(--admin-warning-bg); color: var(--admin-warning-fg); }
+.admin-inline-note--danger { background: var(--admin-danger-bg); color: var(--admin-danger-fg); }
+.admin-inline-note--neutral { background: var(--panel); color: var(--ink-muted); }
+
+/* ---- QR previews ---- */
+.admin-qr-preview { width: 96px; height: 96px; border-radius: var(--admin-radius-sm); object-fit: contain; background: #fff; border: 1px solid var(--border); flex: none; }
+.admin-qr-empty {
+  width: 96px; height: 96px; border-radius: var(--admin-radius-sm); flex: none;
+  border: 1.5px dashed var(--border); background: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font: 700 11.5px var(--font-body); color: var(--ink-faint);
+}
+
+.admin-rate-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; }
+
+/* ---- Sticky save bar ---- */
+.admin-sticky-actions {
+  position: sticky; bottom: 0; z-index: 10;
+  background: var(--white); border: 1px solid var(--border); border-radius: var(--admin-radius-card);
+  padding: 14px 18px; margin-bottom: 20px; box-shadow: var(--admin-shadow-md);
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+}
+.admin-sticky-actions .admin-note { margin: 0; }
+
+/* ---------------------------------------------------------------------
+   Order Detail — primary operational sections (payment review, fulfillment)
+--------------------------------------------------------------------- */
+
+/* A section that demands action reads louder than a normal card. */
+.admin-op-card { border-width: 1.5px; }
+.admin-op-card--attention { border-color: #F0C36B; box-shadow: 0 0 0 4px rgba(255, 193, 90, .12); }
+.admin-op-card__banner {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  border-radius: var(--admin-radius-sm); padding: 12px 16px; margin: 0 0 18px;
+  font: 800 13px var(--font-body); letter-spacing: .05em; text-transform: uppercase;
+}
+.admin-op-card__banner--attention { background: var(--admin-warning-bg); color: var(--admin-warning-fg); }
+.admin-op-card__banner--positive { background: var(--admin-positive-bg); color: var(--admin-positive-fg); }
+.admin-op-card__banner--neutral { background: var(--admin-neutral-bg); color: var(--admin-neutral-fg); }
+.admin-op-card__banner--info { background: var(--admin-info-bg); color: var(--admin-info-fg); }
+.admin-op-card__banner--danger { background: var(--admin-danger-bg); color: var(--admin-danger-fg); }
+
+/* The "amount expected" callout an Owner checks against GCash/bank. */
+.admin-amount-callout {
+  background: var(--panel); border: 1px solid var(--border); border-radius: var(--admin-radius-sm);
+  padding: 16px 18px; margin-bottom: 18px;
+}
+.admin-amount-callout__label { font: 700 11.5px var(--font-body); text-transform: uppercase; letter-spacing: .05em; color: var(--ink-faint); }
+.admin-amount-callout__value { font: 700 30px var(--font-heading); color: var(--ink); line-height: 1.15; margin-top: 2px; }
+.admin-amount-callout__break { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border); }
+.admin-amount-callout__row { display: flex; justify-content: space-between; gap: 12px; font: 500 13.5px var(--font-body); color: var(--ink-muted); padding: 3px 0; }
+.admin-amount-callout__row strong { color: var(--ink); font-weight: 700; }
+
+/* Key/value grid used for payment submission details + shipment details. */
+.admin-kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px 20px; }
+.admin-kv__k { font: 700 11.5px var(--font-body); text-transform: uppercase; letter-spacing: .04em; color: var(--ink-faint); }
+.admin-kv__v { font: 600 14.5px var(--font-body); color: var(--ink); margin-top: 3px; word-break: break-word; }
+.admin-kv__v.is-mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 14px; }
+.admin-kv__v.is-muted { color: var(--ink-faint); font-weight: 500; font-style: italic; }
+
+/* Fulfillment step rail — shows the whole path, marks where the order is. */
+.admin-steps { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+.admin-step {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 7px 13px; border-radius: 999px; font: 700 12.5px var(--font-body);
+  background: var(--panel); color: var(--ink-faint); border: 1.5px solid transparent;
+}
+.admin-step.is-done { background: var(--admin-positive-bg); color: var(--admin-positive-fg); }
+.admin-step.is-current { background: var(--white); color: var(--teal); border-color: var(--teal); }
+.admin-step__dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex: none; }
+.admin-step__arrow { color: var(--ink-faint); font-size: 13px; flex: none; }
+
+.admin-action-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.admin-btn--primary-action { min-height: 46px; padding: 12px 24px; font-size: 15px; }
+
+/* Payment attempt entries */
+.admin-attempt { border: 1px solid var(--border); border-radius: var(--admin-radius-sm); padding: 14px; margin-bottom: 10px; background: var(--white); }
+.admin-attempt.is-current { border-color: var(--teal); background: #F7FCFC; }
+.admin-attempt__head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: baseline; }
+.admin-attempt__method { font: 700 14px var(--font-body); color: var(--ink); }
+
+/* Dashboard operational queue cards (clickable) */
+.admin-queue-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-bottom: 24px; }
+.admin-queue-card {
+  display: flex; align-items: center; gap: 16px; text-decoration: none;
+  background: var(--white); border: 1.5px solid var(--border); border-radius: var(--admin-radius-card);
+  padding: 18px 20px; transition: border-color .12s ease, box-shadow .12s ease, transform .12s ease;
+}
+.admin-queue-card:hover { border-color: var(--teal); box-shadow: var(--admin-shadow-md); transform: translateY(-1px); }
+.admin-queue-card.is-attention { border-color: #F0C36B; background: #FFFDF8; }
+.admin-queue-card.is-clear { opacity: .82; }
+.admin-queue-card__count { font: 700 34px var(--font-heading); line-height: 1; color: var(--ink); flex: none; min-width: 44px; }
+.admin-queue-card.is-attention .admin-queue-card__count { color: var(--admin-warning-fg); }
+.admin-queue-card__body { min-width: 0; }
+.admin-queue-card__title { font: 700 14.5px var(--font-heading); color: var(--ink); }
+.admin-queue-card__desc { font: 500 12.5px var(--font-body); color: var(--ink-muted); margin-top: 3px; }
+.admin-queue-card__cta { font: 700 12.5px var(--font-body); color: var(--teal); margin-top: 6px; }
+
+@media (max-width: 720px) {
+  .admin-amount-callout__value { font-size: 26px; }
+  .admin-sticky-actions { flex-direction: column; align-items: stretch; }
+  .admin-sticky-actions .admin-btn { width: 100%; }
+  .admin-action-row .admin-btn { flex: 1 1 100%; }
+  .admin-store-status { padding: 16px; }
+  .admin-steps { gap: 6px; }
+  .admin-step { font-size: 11.5px; padding: 6px 11px; }
+}

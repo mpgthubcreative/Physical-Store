@@ -50,9 +50,19 @@ exports.handler = withErrorHandling(async (event) => {
       customerEmail: order.customerEmail,
       customerMobile: order.customerMobile,
       deliveryMethod: order.deliveryMethod,
+      // Phase 5D.2 fields. Every one of these is absent on orders created
+      // before this phase — they are returned as null so the Admin UI can
+      // render "Not recorded" rather than erroring or showing "undefined".
+      // Historical orders are NEVER backfilled to satisfy the new UI.
+      destinationRegion: order.destinationRegion || null,
+      courier: order.courier || null,
+      trackingNumber: order.trackingNumber || null,
       deliveryAddress: order.deliveryAddress,
       orderNotes: order.orderNotes,
       items: (order.items || []).map(withResolvedImages),
+      // The permanent pricing snapshot, returned verbatim. Admin displays
+      // what the customer was actually charged, never a recalculation
+      // against today's shipping settings.
       pricing: order.pricing,
       paymentStatus: order.paymentStatus,
       fulfillmentStatus: order.fulfillmentStatus,

@@ -1186,3 +1186,48 @@ a.btn-coral { display: inline-block; text-decoration: none; }
 }
 .field select:focus { border-color: var(--teal); }
 .contact-page__intro { font-size: clamp(15px, 1.5vw, 17px); color: var(--ink-muted); margin: 0 0 clamp(24px, 4vw, 40px); }
+
+/* =====================================================================
+   Phase 5D.2 — customer payment page
+   ===================================================================== */
+
+/* The amount owed, stated once and unmissably, so a customer transfers the
+   full total (items + shipping) rather than just the item subtotal. */
+.payment-amount-due {
+  background: linear-gradient(180deg, #F3FAF9, var(--panel));
+  border: 1.5px solid var(--teal);
+  border-radius: 16px; padding: 20px 22px; margin: 0 0 20px;
+}
+.payment-amount-due__label {
+  font: 700 12px var(--font-body); text-transform: uppercase; letter-spacing: .07em; color: var(--ink-muted);
+}
+.payment-amount-due__value { font: 700 clamp(30px, 6vw, 40px) var(--font-heading); color: var(--ink); line-height: 1.1; margin-top: 4px; }
+.payment-amount-due__break {
+  display: flex; gap: 8px 18px; flex-wrap: wrap; margin-top: 10px;
+  font: 600 13.5px var(--font-body); color: var(--ink-muted);
+}
+.payment-amount-due__note { font: 500 13.5px var(--font-body); color: var(--ink-muted); margin: 12px 0 0; }
+
+/* QR image inside a payment method card. Constrained so a large upload
+   can't blow out the layout on mobile. */
+.payment-qr {
+  display: block; margin-top: 12px;
+  width: 100%; max-width: 220px; height: auto;
+  border-radius: 12px; border: 1px solid var(--border); background: var(--white);
+}
+
+/* Post-submission confirmation. */
+.payment-submitted {
+  background: #E3F5E6; border: 1.5px solid #A9DDB5; border-radius: 16px;
+  padding: 22px 24px; margin: 0 0 16px;
+}
+.payment-submitted__title { font: 700 clamp(18px, 3vw, 22px) var(--font-heading); color: #1E7B34; margin: 0 0 10px; }
+.payment-submitted p { font-size: 14.5px; color: var(--ink-muted); margin: 0 0 10px; line-height: 1.6; }
+.payment-submitted p:last-child { margin-bottom: 0; }
+
+/* Checkout closed notice (server-side master switch is off). */
+.checkout-closed-note {
+  background: #FFF1E0; border: 1.5px solid #F0C36B; color: #B15E00;
+  border-radius: 14px; padding: 14px 16px; margin: 0 0 16px;
+  font: 600 14px var(--font-body); line-height: 1.55;
+}

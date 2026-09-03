@@ -30,9 +30,10 @@
  */
 const { admin, getDb } = require('./_shared/firebaseAdmin');
 const { withErrorHandling, ok, fail, json } = require('./_shared/response');
-const { ValidationError, requireString, optionalString, requireEmail, requireMobile, requireOneOf } = require('./_shared/validation');
+const { ValidationError, requireString, optionalString, requireEmail, requireMobile } = require('./_shared/validation');
 const { resolveAndValidateCart, CartInvalidError } = require('./_shared/orderValidation');
-const { getShippingSettings } = require('./_shared/settings');
+const { getShippingSettings, getPaymentSettings } = require('./_shared/settings');
+const { validateDestination, resolveShippingQuote } = require('./_shared/shippingRates');
 const { generateOrderNumberCandidate, isValidAccessToken, isValidIdempotencyKey, hashToken, computeRequestFingerprint } = require('./_shared/orderSecurity');
 const { reserveInventory, freshExpiry, InsufficientStockError } = require('./_shared/inventory');
 
@@ -40,12 +41,19 @@ const MAX_ORDER_NUMBER_ATTEMPTS = 5;
 
 class OrderNumberCollision extends Error {}
 
+/*
+ * Phase 5D.2: `barangay` is required for new delivery orders. Orders
+ * created before this phase have no barangay field at all — that is
+ * historical data and is never backfilled or re-validated; only NEW
+ * submissions pass through here.
+ */
 function validateDeliveryAddress(raw) {
   if (!raw || typeof raw !== 'object') throw new ValidationError('Delivery address is required.');
   return {
     line1: requireString(raw.line1, 'Address line 1', { maxLength: 200 }),
     line2: optionalString(raw.line2, 'Address line 2', { maxLength: 200 }),
-    city: requireString(raw.city, 'City', { maxLength: 100 }),
+    barangay: requireString(raw.barangay, 'Barangay', { maxLength: 100 }),
+    city: requireString(raw.city, 'City/Municipality', { maxLength: 100 }),
     province: requireString(raw.province, 'Province', { maxLength: 100 }),
     postalCode: requireString(raw.postalCode, 'Postal code', { maxLength: 20 }),
   };
@@ -68,24 +76,33 @@ exports.handler = withErrorHandling(async (event) => {
   const email = requireEmail(customer.email);
   const mobile = requireMobile(customer.mobile);
 
-  const deliveryMethod = requireOneOf(body.deliveryMethod, 'deliveryMethod', ['delivery', 'pickup']);
   const orderNotes = optionalString(body.orderNotes, 'Order notes', { maxLength: 500 });
 
-  const shipping = await getShippingSettings(db);
+  const [shipping, paymentSettings] = await Promise.all([getShippingSettings(db), getPaymentSettings(db)]);
 
-  let deliveryAddress = null;
-  let shippingFeeBase;
-  if (deliveryMethod === 'delivery') {
-    if (!shipping.deliveryEnabled) throw new ValidationError('Delivery is not currently available. Please choose pickup.');
-    if (shipping.flatRateDelivery == null) {
-      throw new ValidationError('Delivery pricing is not yet configured. Please choose pickup or contact us.');
-    }
-    deliveryAddress = validateDeliveryAddress(body.deliveryAddress);
-    shippingFeeBase = Number(shipping.flatRateDelivery);
-  } else {
-    if (!shipping.pickupEnabled) throw new ValidationError('Pickup is not currently available.');
-    shippingFeeBase = Number(shipping.pickupFee || 0);
+  // ---- Phase 5D.2 master switch ----
+  // The store is not purchasable until the Owner explicitly flips
+  // settings/payment.checkoutEnabled to true (Owner-only, Admin -> Settings).
+  // Enforced HERE, server-side, so no frontend deploy, cached page, or
+  // crafted request can create an order before the Owner is ready. Fails
+  // closed: a missing field reads as false (see _shared/settings.js).
+  //
+  // This deliberately gates ORDER CREATION only. Orders that already exist
+  // stay payable/reviewable if checkout is later switched off, so toggling
+  // it never strands a customer who has already been asked for money.
+  if (!paymentSettings.checkoutEnabled) {
+    return json(503, {
+      error: 'CHECKOUT_DISABLED',
+      message: 'Online checkout is not open yet. Please contact us to place your order.',
+    });
   }
+
+  // Validates the delivery method and, for delivery, that the destination
+  // region is one of luzon|visayas|mindanao. Pickup forces the region to
+  // null — a region sent with a pickup order is ignored, never priced.
+  const { deliveryMethod, destinationRegion } = validateDestination(body.deliveryMethod, body.destinationRegion);
+
+  const deliveryAddress = deliveryMethod === 'delivery' ? validateDeliveryAddress(body.deliveryAddress) : null;
 
   let cartResult;
   try {
@@ -119,15 +136,20 @@ exports.handler = withErrorHandling(async (event) => {
     ]),
   ];
 
-  let shippingFee = shippingFeeBase;
-  if (deliveryMethod === 'delivery' && shipping.freeShippingThreshold != null && subtotal >= Number(shipping.freeShippingThreshold)) {
-    shippingFee = 0;
-  }
+  // ---- Authoritative shipping + grand total ----
+  // `subtotal` came from resolveAndValidateCart, which re-priced every line
+  // against live Firestore product/patch prices. The quote below comes from
+  // settings/shipping via the rate-provider layer. NOTHING here is read
+  // from the request body: a browser that posts its own shippingFee or
+  // total is simply ignored — those keys are never looked at.
+  const quote = resolveShippingQuote({ deliveryMethod, destinationRegion, itemSubtotal: subtotal, shipping });
+  const shippingFee = quote.shippingFee;
   const total = subtotal + shippingFee;
 
   const fingerprint = computeRequestFingerprint({
     customer: { fullName, email, mobile },
     deliveryMethod,
+    destinationRegion,
     deliveryAddress,
     orderNotes,
     items: body.items,
@@ -175,6 +197,10 @@ exports.handler = withErrorHandling(async (event) => {
             customerEmail: email,
             customerMobile: mobile,
             deliveryMethod,
+            // Phase 5D.2: null for pickup, luzon|visayas|mindanao for
+            // delivery. Part of the permanent order snapshot — Admin reads
+            // this, never re-derives it from the address.
+            destinationRegion,
             deliveryAddress,
             orderNotes,
             items: lines,
@@ -188,9 +214,30 @@ exports.handler = withErrorHandling(async (event) => {
             // itself, server-side, the same way this sets it false.
             isTest: false,
             inventoryStatus: 'reserved',
-            pricing: { subtotal, shippingFee, total },
+            // PERMANENT PRICING SNAPSHOT. These three numbers are frozen at
+            // order time and are never recalculated from current settings —
+            // if Luzon later moves from 150 to 180, this order still shows
+            // and still owes exactly what it was charged. `shippingRate`
+            // records WHERE the fee came from (which region/pickup/free-
+            // shipping rule) so an old order stays explainable even after
+            // the rate table changes underneath it.
+            pricing: {
+              subtotal,
+              shippingFee,
+              total,
+              shippingRate: {
+                source: quote.rateSource,
+                regionLabel: quote.regionLabel,
+                freeShippingApplied: quote.freeShippingApplied,
+              },
+            },
             paymentStatus: 'awaiting_payment',
             fulfillmentStatus: 'unfulfilled',
+            // Phase 5D.2: populated only by the "mark shipped" transition on
+            // a delivery order (admin-update-fulfillment.js). Never cleared
+            // by any later status change.
+            courier: null,
+            trackingNumber: null,
             paymentAttempts: [],
             history: [
               { action: 'created', at: now, actorType: 'customer', actorId: null, meta: {} },

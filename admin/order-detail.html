@@ -48,26 +48,37 @@
           </div>
         </div>
 
+        <!-- ============ PAYMENT REVIEW (primary operational section) ============ -->
+        <div class="admin-card admin-op-card" data-payment-card>
+          <div data-payment-banner></div>
+          <h2 class="admin-card__title">Payment</h2>
+          <p class="admin-card__desc">What this customer owes, what they say they sent, and your decision.</p>
+          <div data-payment-expected></div>
+          <div data-payment-current></div>
+          <div data-payment-actions></div>
+          <hr class="admin-divider" />
+          <h3 class="admin-card__title" style="font-size:15px;">Payment attempt history</h3>
+          <div data-payment-attempts></div>
+        </div>
+
+        <!-- ============ FULFILLMENT (primary operational section) ============ -->
+        <div class="admin-card admin-op-card" data-fulfillment-card>
+          <div data-fulfillment-banner></div>
+          <h2 class="admin-card__title">Fulfillment</h2>
+          <p class="admin-card__desc" data-fulfillment-desc></p>
+          <div data-fulfillment-steps></div>
+          <div data-shipment-details></div>
+          <div data-fulfillment-actions></div>
+        </div>
+
         <div class="admin-card">
           <h2 class="admin-card__title">Order items</h2>
           <div data-detail-lines class="order-lines"></div>
           <hr class="admin-divider" />
           <div class="order-totals">
             <div class="checkout-summary__row"><span>Subtotal</span><span data-detail-subtotal>&mdash;</span></div>
-            <div class="checkout-summary__row"><span>Shipping</span><span data-detail-shipping>&mdash;</span></div>
-            <div class="checkout-summary__row checkout-summary__row--total"><span>Total</span><span data-detail-total>&mdash;</span></div>
-          </div>
-        </div>
-
-        <div class="admin-form-grid two-col">
-          <div class="admin-card">
-            <h2 class="admin-card__title">Payment review</h2>
-            <div data-payment-attempts></div>
-            <div data-payment-actions></div>
-          </div>
-          <div class="admin-card">
-            <h2 class="admin-card__title">Fulfillment</h2>
-            <div data-fulfillment-actions></div>
+            <div class="checkout-summary__row"><span data-detail-shipping-label>Shipping</span><span data-detail-shipping>&mdash;</span></div>
+            <div class="checkout-summary__row checkout-summary__row--total"><span>Grand Total</span><span data-detail-total>&mdash;</span></div>
           </div>
         </div>
 

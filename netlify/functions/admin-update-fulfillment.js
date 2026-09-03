@@ -12,11 +12,19 @@
  * shipped only for "delivery" orders. Cancellation is NOT part of this
  * status model yet (Phase 5C scope) — that's designed separately once a
  * cancellation/refund workflow exists.
+ *
+ * Phase 5D.2 — courier + tracking:
+ * Moving a DELIVERY order to "shipped" requires a courier name; a tracking
+ * number is optional, because some local/provincial couriers don't issue
+ * one. Both are written once, on that transition only, and are never
+ * cleared by a later transition (completing an order does not erase how it
+ * shipped). A pickup order can still never reach "shipped" at all, so it
+ * can never carry courier/tracking.
  */
 const { admin, getDb } = require('./_shared/firebaseAdmin');
 const { requireAdmin } = require('./_shared/adminAuth');
 const { withErrorHandling, ok, fail } = require('./_shared/response');
-const { requireString, requireOneOf } = require('./_shared/validation');
+const { requireString, optionalString, requireOneOf } = require('./_shared/validation');
 
 const ALL_STATUSES = ['unfulfilled', 'processing', 'ready_for_pickup', 'shipped', 'completed'];
 
@@ -37,6 +45,17 @@ exports.handler = withErrorHandling(async (event) => {
   const body = JSON.parse(event.body || '{}');
   const orderId = requireString(body.orderId, 'orderId', { maxLength: 100 });
   const targetStatus = requireOneOf(body.fulfillmentStatus, 'fulfillmentStatus', ALL_STATUSES);
+
+  // Courier is mandatory when shipping, tracking number is not. Validated
+  // up front so a bad value fails before the transaction opens; the
+  // delivery-method guard inside the transaction still independently
+  // refuses "shipped" for a pickup order.
+  let courier = null;
+  let trackingNumber = null;
+  if (targetStatus === 'shipped') {
+    courier = requireString(body.courier, 'Courier', { maxLength: 80 });
+    trackingNumber = optionalString(body.trackingNumber, 'Tracking number', { maxLength: 100 }) || null;
+  }
 
   const db = getDb();
   const ref = db.collection('orders').doc(orderId);
@@ -65,15 +84,26 @@ exports.handler = withErrorHandling(async (event) => {
     }
 
     const now = admin.firestore.Timestamp.now();
+
+    // Only the shipped transition writes courier/tracking. Every other
+    // transition omits these keys entirely, so completing a shipped order
+    // leaves its courier and tracking number exactly as recorded.
+    const shippingPatch = targetStatus === 'shipped' ? { courier, trackingNumber } : {};
+
     tx.update(ref, {
       fulfillmentStatus: targetStatus,
+      ...shippingPatch,
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       history: admin.firestore.FieldValue.arrayUnion({
         action: 'fulfillment_updated',
         at: now,
         actorType: 'admin',
         actorId: auth.uid,
-        meta: { previousStatus: current, newStatus: targetStatus },
+        meta: {
+          previousStatus: current,
+          newStatus: targetStatus,
+          ...(targetStatus === 'shipped' ? { courier, trackingNumber } : {}),
+        },
       }),
     });
 
@@ -81,5 +111,5 @@ exports.handler = withErrorHandling(async (event) => {
   });
 
   if (!result.ok) return fail(result.status, result.error);
-  return ok({ fulfillmentStatus: targetStatus });
+  return ok({ fulfillmentStatus: targetStatus, courier, trackingNumber });
 });

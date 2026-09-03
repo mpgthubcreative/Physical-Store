@@ -25,7 +25,7 @@ exports.handler = withErrorHandling(async (event) => {
   const body = JSON.parse(event.body || '{}');
   const entityType = validateEntityType(body.entityType);
   const entityId = requireString(body.entityId, 'entityId', { maxLength: 100 });
-  const role = validateRole(entityType, body.role, body.variantId);
+  const role = validateRole(entityType, body.role, body.variantId, entityId);
   const contentType = requireImageContentType(body.contentType);
   const filename = requireString(body.filename, 'filename', { maxLength: 150 });
 

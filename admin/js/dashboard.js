@@ -1,6 +1,6 @@
 import { requireSession, apiFetch } from './admin-auth.js';
 import { renderAdminShell } from './admin-shell.js';
-import { PAYMENT_STATUS, FULFILLMENT_STATUS, statusBadge, fmtMoney, fmtDate, escapeHtml } from './admin-format.js';
+import { PAYMENT_STATUS, FULFILLMENT_STATUS, statusBadge, destinationShort, fmtMoney, fmtDate, escapeHtml } from './admin-format.js';
 
 function setKpi(selector, value) {
   const el = document.querySelector(selector);
@@ -8,10 +8,52 @@ function setKpi(selector, value) {
   el.classList.remove('is-loading');
 }
 
+/**
+ * Operational queues — the first thing the Owner should see. Each card is a
+ * link into the Orders page pre-filtered to exactly that queue, so "3
+ * payments to review" is one click from the review screen.
+ *
+ * A queue with nothing in it still renders (dimmed, count 0) rather than
+ * disappearing — a missing card reads as "something is broken", while a
+ * visible zero reads as "nothing to do", which is the actual message.
+ */
+function renderOperationalQueues({ pendingReviewCount, paidUnfulfilledCount }) {
+  const queues = [
+    {
+      count: pendingReviewCount,
+      title: 'Payments to Review',
+      desc: pendingReviewCount === 1 ? '1 payment submitted and awaiting your decision' : `${pendingReviewCount} payments submitted and awaiting your decision`,
+      href: 'orders.html?paymentStatus=pending_review',
+      cta: 'Review payments →',
+    },
+    {
+      count: paidUnfulfilledCount,
+      title: 'Orders to Fulfill',
+      desc: paidUnfulfilledCount === 1 ? '1 paid order not yet started' : `${paidUnfulfilledCount} paid orders not yet started`,
+      href: 'orders.html?paymentStatus=paid&fulfillmentStatus=unfulfilled',
+      cta: 'Start fulfilling →',
+    },
+  ];
+
+  document.querySelector('[data-operational-queues]').innerHTML = queues
+    .map(
+      (q) => `
+      <a class="admin-queue-card ${q.count > 0 ? 'is-attention' : 'is-clear'}" href="${q.href}">
+        <div class="admin-queue-card__count">${q.count}</div>
+        <div class="admin-queue-card__body">
+          <div class="admin-queue-card__title">${q.title}</div>
+          <div class="admin-queue-card__desc">${q.count > 0 ? escapeHtml(q.desc) : 'Nothing waiting right now'}</div>
+          ${q.count > 0 ? `<div class="admin-queue-card__cta">${q.cta}</div>` : ''}
+        </div>
+      </a>`
+    )
+    .join('');
+}
+
 function renderRecentOrders(orders) {
   const tbody = document.querySelector('[data-recent-orders]');
   if (!orders.length) {
-    tbody.innerHTML = '<tr><td colspan="7" class="admin-empty">No orders yet.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="admin-empty">No orders yet.</td></tr>';
     return;
   }
   tbody.innerHTML = orders
@@ -20,6 +62,7 @@ function renderRecentOrders(orders) {
     <tr>
       <td data-role="heading"><span class="admin-row-title">${o.orderNumber}</span>${o.isTest ? ' <span class="admin-badge admin-badge--neutral">TEST</span>' : ''}</td>
       <td data-role="meta" data-label="Customer">${escapeHtml(o.customerName)}</td>
+      <td data-role="meta" data-label="Destination">${destinationShort(o)}</td>
       <td data-role="meta" data-label="Total">${fmtMoney(o.total)}</td>
       <td data-role="meta" data-label="Payment">${statusBadge(PAYMENT_STATUS, o.paymentStatus)}</td>
       <td data-role="meta" data-label="Fulfillment">${statusBadge(FULFILLMENT_STATUS, o.fulfillmentStatus)}</td>
@@ -30,41 +73,23 @@ function renderRecentOrders(orders) {
     .join('');
 }
 
-function renderAttention({ pendingReviewCount, paidAwaitingProcessingCount, lowStockProducts }) {
+/** Stock-only attention now — the order queues moved up into their own cards. */
+function renderAttention({ lowStockProducts }) {
   const card = document.querySelector('[data-attention-card]');
-  const items = [];
-
-  if (pendingReviewCount > 0) {
-    items.push(`
-      <div class="admin-timeline-item">
-        <div class="admin-timeline-item__action">${pendingReviewCount} payment${pendingReviewCount === 1 ? '' : 's'} awaiting review</div>
-        <div class="admin-timeline-item__meta"><a href="orders.html?paymentStatus=pending_review">Review now →</a></div>
-      </div>`);
-  }
-  if (paidAwaitingProcessingCount > 0) {
-    items.push(`
-      <div class="admin-timeline-item">
-        <div class="admin-timeline-item__action">${paidAwaitingProcessingCount} paid order${paidAwaitingProcessingCount === 1 ? '' : 's'} awaiting processing</div>
-        <div class="admin-timeline-item__meta"><a href="orders.html?paymentStatus=paid">View orders →</a></div>
-      </div>`);
-  }
-  if (lowStockProducts.length) {
-    items.push(`
-      <div class="admin-timeline-item">
-        <div class="admin-timeline-item__action">${lowStockProducts.length} product${lowStockProducts.length === 1 ? ' is' : 's are'} out of stock</div>
-        <div class="admin-timeline-item__meta">${lowStockProducts.map((p) => escapeHtml(p.title)).join(', ')}</div>
-      </div>`);
-  }
-
-  if (!items.length) {
+  if (!lowStockProducts.length) {
     card.innerHTML = `
       <div class="admin-empty-state" style="padding:20px 0;">
-        <div class="admin-empty-state__title">All clear</div>
-        <div class="admin-empty-state__desc">Nothing needs your attention right now.</div>
+        <div class="admin-empty-state__title">Stock looks fine</div>
+        <div class="admin-empty-state__desc">No active product is out of stock.</div>
       </div>`;
     return;
   }
-  card.innerHTML = `<div class="admin-timeline">${items.join('')}</div>`;
+  card.innerHTML = `<div class="admin-timeline">
+    <div class="admin-timeline-item">
+      <div class="admin-timeline-item__action">${lowStockProducts.length} product${lowStockProducts.length === 1 ? ' is' : 's are'} out of stock</div>
+      <div class="admin-timeline-item__meta">${lowStockProducts.map((p) => escapeHtml(p.title)).join(', ')}</div>
+    </div>
+  </div>`;
 }
 
 async function init() {
@@ -80,8 +105,13 @@ async function init() {
       apiFetch('/api/admin-list-orders?limit=5'),
     ]);
 
-    setKpi('[data-count-pending-review]', orderStats.pendingReviewCount);
-    setKpi('[data-count-paid-awaiting]', orderStats.paidAwaitingProcessingCount);
+    renderOperationalQueues({
+      pendingReviewCount: orderStats.pendingReviewCount,
+      // Falls back to the combined counter if an older deploy of
+      // admin-order-stats.js is still live.
+      paidUnfulfilledCount: orderStats.paidUnfulfilledCount ?? orderStats.paidAwaitingProcessingCount,
+    });
+
     setKpi('[data-count-total-orders]', orderStats.totalOrdersCount);
 
     const activeProducts = products.filter((p) => p.active);
@@ -94,11 +124,7 @@ async function init() {
     setKpi('[data-count-lowstock]', lowStockProducts.length);
 
     renderRecentOrders(recentOrders);
-    renderAttention({
-      pendingReviewCount: orderStats.pendingReviewCount,
-      paidAwaitingProcessingCount: orderStats.paidAwaitingProcessingCount,
-      lowStockProducts,
-    });
+    renderAttention({ lowStockProducts });
   } catch (err) {
     console.error(err);
   }

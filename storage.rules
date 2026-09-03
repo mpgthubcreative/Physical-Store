@@ -21,6 +21,18 @@ service firebase.storage {
       allow write: if false;
     }
 
+    // Phase 5D.2 — payment QR codes (GCash / bank transfer), uploaded by
+    // the Owner via Admin -> Settings. Public read for the same reason
+    // product photos are: the customer's payment page has to display the QR
+    // to an unauthenticated guest. These contain only what the Owner
+    // deliberately publishes as payment instructions — the same information
+    // printed on the payment page beside them. Writes still go exclusively
+    // through Netlify Functions using the Admin SDK.
+    match /settings-images/{allPaths=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // Buddy sells physical goods — there is intentionally no private
     // "paid-products" / digital-delivery path here (unlike Luna Shop).
     // Everything this store stocks is a public product photo.

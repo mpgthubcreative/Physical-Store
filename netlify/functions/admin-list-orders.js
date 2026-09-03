@@ -43,6 +43,9 @@ function sanitizeOrderSummary(doc) {
     fulfillmentStatus: order.fulfillmentStatus,
     inventoryStatus: order.inventoryStatus || null,
     deliveryMethod: order.deliveryMethod,
+    // Null on pickup orders AND on every order created before Phase 5D.2 —
+    // the Orders table renders those as "—" / "Not recorded", never blank.
+    destinationRegion: order.destinationRegion || null,
     isTest: order.isTest === true,
     createdAt: order.createdAt || null,
   };

@@ -26,6 +26,39 @@ export const INVENTORY_STATUS = {
   expired: { label: 'Expired', tone: 'danger' },
 };
 
+export const REGION_LABELS = { luzon: 'Luzon', visayas: 'Visayas', mindanao: 'Mindanao' };
+
+/**
+ * One definition of how an order's destination reads in the UI, used by the
+ * Orders table and Order Detail alike.
+ *
+ * Orders created before Phase 5D.2 have no destinationRegion at all. A
+ * delivery order in that state shows "Not recorded" rather than a blank or
+ * a guess — the region was genuinely never captured for it, and nothing
+ * backfills historical orders to pretend otherwise.
+ */
+export function destinationLabel(order) {
+  if (order.deliveryMethod === 'pickup') return 'Pickup';
+  const region = order.destinationRegion;
+  if (!region) return 'Delivery — region not recorded';
+  return REGION_LABELS[region] || region;
+}
+
+/**
+ * Short form for the Orders table column.
+ *
+ * Returns HTML (the "not recorded" case carries a span), so callers insert
+ * it with innerHTML — which means the region fallback must be escaped. The
+ * value is a server-validated enum today; escaping keeps that from being a
+ * load-bearing assumption if a future writer ever widens it.
+ */
+export function destinationShort(order) {
+  if (order.deliveryMethod === 'pickup') return 'Pickup';
+  const region = order.destinationRegion;
+  if (!region) return 'Delivery <span class="admin-row-sub" style="display:inline;">(not recorded)</span>';
+  return REGION_LABELS[region] || escapeHtml(region);
+}
+
 export function statusBadge(map, key, fallbackLabel) {
   const entry = map[key] || { label: fallbackLabel || key || '—', tone: 'neutral' };
   return `<span class="admin-badge admin-badge--${entry.tone}">${entry.label}</span>`;

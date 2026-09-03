@@ -66,10 +66,18 @@ function sanitizeOrder(order) {
     orderNumber: order.orderNumber,
     customerName: order.customerName,
     deliveryMethod: order.deliveryMethod,
+    // Phase 5D.2. Absent on every order created before this phase — sent as
+    // null so the customer page can simply omit the region line rather than
+    // render "undefined". Historical orders are never backfilled.
+    destinationRegion: order.destinationRegion || null,
     items: (order.items || []).map(sanitizeItem),
+    // The frozen snapshot exactly as stored. Never recomputed from current
+    // settings — an order placed when Luzon cost ₱150 still shows ₱150.
     pricing: order.pricing,
     paymentStatus: order.paymentStatus,
     fulfillmentStatus: order.fulfillmentStatus,
+    courier: order.courier || null,
+    trackingNumber: order.trackingNumber || null,
     // Absent on legacy isTest orders (predate Phase 5D) — order.js treats
     // that the same as 'reserved' (show the normal payment form), since
     // those orders never had reservation-expiry semantics to begin with.

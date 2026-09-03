@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Settings — Buddy Patches Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="./css/admin.css">
+</head>
+<body>
+
+<div class="admin-shell">
+  <div id="admin-sidebar"></div>
+  <div class="admin-content">
+    <div id="admin-topbar"></div>
+    <main class="admin-main">
+      <div class="admin-page-head">
+        <div>
+          <h1>Settings</h1>
+          <p class="admin-page-sub">Store configuration — payment details and shipping rates.</p>
+        </div>
+      </div>
+
+      <p class="admin-loading-line" data-settings-loading><span class="admin-btn__spinner"></span> Loading settings…</p>
+
+      <div data-settings-body hidden>
+        <!-- Store status banner: the single most important thing on this
+             page. Rendered by settings.js so it can never disagree with the
+             server's actual checkoutEnabled value. -->
+        <div data-store-status></div>
+
+        <div class="admin-tabs" role="tablist">
+          <button type="button" class="admin-tab is-active" role="tab" data-tab-btn="payments">Payments</button>
+          <button type="button" class="admin-tab" role="tab" data-tab-btn="shipping">Shipping</button>
+        </div>
+
+        <!-- ================= PAYMENTS ================= -->
+        <section data-tab-panel="payments">
+          <div class="admin-card" data-owner-only-note hidden>
+            <div class="admin-inline-note admin-inline-note--info">
+              <strong>View only.</strong> Payment configuration and the checkout switch can only be changed by the Owner account.
+              You can still edit shipping rates on the Shipping tab.
+            </div>
+          </div>
+
+          <form data-payment-form novalidate>
+            <!-- ---- GCash ---- -->
+            <div class="admin-card">
+              <div class="admin-method-head">
+                <div>
+                  <h2 class="admin-card__title">GCash</h2>
+                  <p class="admin-card__desc">Shown to customers on the payment page when enabled.</p>
+                </div>
+                <label class="admin-switch">
+                  <input type="checkbox" data-gcash-enabled />
+                  <span class="admin-switch__track"><span class="admin-switch__thumb"></span></span>
+                  <span class="admin-switch__label">Enabled</span>
+                </label>
+              </div>
+
+              <div class="admin-form-grid two-col">
+                <div class="admin-field">
+                  <label for="gcash-name">Account name <span class="req">*</span></label>
+                  <input id="gcash-name" data-gcash-account-name maxlength="120" placeholder="e.g. Juan D." />
+                </div>
+                <div class="admin-field">
+                  <label for="gcash-number">GCash mobile number <span class="req">*</span></label>
+                  <input id="gcash-number" data-gcash-mobile maxlength="40" placeholder="e.g. 0917 123 4567" />
+                </div>
+              </div>
+              <div class="admin-field" style="margin-top:16px;">
+                <label for="gcash-instructions">Extra instructions <span class="hint">(optional)</span></label>
+                <textarea id="gcash-instructions" data-gcash-instructions maxlength="500" placeholder="Anything the customer should know when sending payment."></textarea>
+              </div>
+
+              <div class="admin-section-head"><h2>GCash QR</h2></div>
+              <div class="admin-image-drop">
+                <img data-gcash-qr-preview alt="" class="admin-qr-preview" hidden />
+                <div data-gcash-qr-empty class="admin-qr-empty">No QR</div>
+                <div style="flex:1;min-width:180px;">
+                  <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-gcash-qr-input />
+                  <div class="admin-image-hint">Optional. JPG, PNG, WEBP or GIF, up to 8MB. Replacing a QR removes the old image only after the new one is saved.</div>
+                </div>
+                <button type="button" class="admin-btn admin-btn--ghost admin-btn--small" data-gcash-qr-remove hidden>Remove</button>
+              </div>
+            </div>
+
+            <!-- ---- Bank Transfer ---- -->
+            <div class="admin-card">
+              <div class="admin-method-head">
+                <div>
+                  <h2 class="admin-card__title">Bank Transfer</h2>
+                  <p class="admin-card__desc">Shown to customers on the payment page when enabled.</p>
+                </div>
+                <label class="admin-switch">
+                  <input type="checkbox" data-bank-enabled />
+                  <span class="admin-switch__track"><span class="admin-switch__thumb"></span></span>
+                  <span class="admin-switch__label">Enabled</span>
+                </label>
+              </div>
+
+              <div class="admin-form-grid two-col">
+                <div class="admin-field">
+                  <label for="bank-name">Bank name <span class="req">*</span></label>
+                  <input id="bank-name" data-bank-bank-name maxlength="120" placeholder="e.g. BPI" />
+                </div>
+                <div class="admin-field">
+                  <label for="bank-account-name">Account name <span class="req">*</span></label>
+                  <input id="bank-account-name" data-bank-account-name maxlength="120" />
+                </div>
+                <div class="admin-field">
+                  <label for="bank-account-number">Account number <span class="req">*</span></label>
+                  <input id="bank-account-number" data-bank-account-number maxlength="60" />
+                </div>
+              </div>
+              <div class="admin-field" style="margin-top:16px;">
+                <label for="bank-instructions">Extra instructions <span class="hint">(optional)</span></label>
+                <textarea id="bank-instructions" data-bank-instructions maxlength="500"></textarea>
+              </div>
+
+              <div class="admin-section-head"><h2>Bank QR</h2></div>
+              <div class="admin-image-drop">
+                <img data-bank-qr-preview alt="" class="admin-qr-preview" hidden />
+                <div data-bank-qr-empty class="admin-qr-empty">No QR</div>
+                <div style="flex:1;min-width:180px;">
+                  <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-bank-qr-input />
+                  <div class="admin-image-hint">Optional. JPG, PNG, WEBP or GIF, up to 8MB.</div>
+                </div>
+                <button type="button" class="admin-btn admin-btn--ghost admin-btn--small" data-bank-qr-remove hidden>Remove</button>
+              </div>
+            </div>
+
+            <!-- ---- Master switch ---- -->
+            <div class="admin-card admin-card--danger-zone">
+              <h2 class="admin-card__title">Checkout master switch</h2>
+              <p class="admin-card__desc">
+                Controls whether the storefront can create new orders at all. Enforced on the server — while this is off,
+                no order can be placed even if payment details are filled in. Existing orders stay payable either way.
+              </p>
+              <label class="admin-switch admin-switch--large">
+                <input type="checkbox" data-checkout-enabled />
+                <span class="admin-switch__track"><span class="admin-switch__thumb"></span></span>
+                <span class="admin-switch__label" data-checkout-switch-label>Checkout disabled</span>
+              </label>
+              <p class="hint" style="margin-top:12px;">Turn this on only when you are ready to accept real customer orders and real money.</p>
+            </div>
+
+            <div class="admin-sticky-actions" data-payment-actions>
+              <button type="submit" class="admin-btn" data-save-payment>Save payment settings</button>
+              <p class="admin-note" data-payment-note></p>
+            </div>
+          </form>
+
+          <div class="admin-card" data-legacy-methods-card hidden>
+            <h2 class="admin-card__title">Other configured methods</h2>
+            <p class="admin-card__desc">
+              Payment methods found on this store from an earlier setup. They still work for customers; they are shown here
+              so nothing appears to have been silently removed.
+            </p>
+            <div data-legacy-methods></div>
+          </div>
+        </section>
+
+        <!-- ================= SHIPPING ================= -->
+        <section data-tab-panel="shipping" hidden>
+          <form data-shipping-form novalidate>
+            <div class="admin-card">
+              <h2 class="admin-card__title">Delivery methods</h2>
+              <p class="admin-card__desc">At least one must stay enabled.</p>
+              <label class="admin-switch" style="margin-bottom:12px;">
+                <input type="checkbox" data-delivery-enabled />
+                <span class="admin-switch__track"><span class="admin-switch__thumb"></span></span>
+                <span class="admin-switch__label">Delivery enabled</span>
+              </label>
+              <label class="admin-switch">
+                <input type="checkbox" data-pickup-enabled />
+                <span class="admin-switch__track"><span class="admin-switch__thumb"></span></span>
+                <span class="admin-switch__label">Pickup enabled</span>
+              </label>
+            </div>
+
+            <div class="admin-card">
+              <h2 class="admin-card__title">Regional flat rates</h2>
+              <p class="admin-card__desc">
+                Buddy's own flat shipping charges — not live courier quotations. A region left blank cannot be delivered to
+                (it is refused at checkout, never shipped free).
+              </p>
+
+              <div data-legacy-rate-note hidden>
+                <div class="admin-inline-note admin-inline-note--warning" style="margin-bottom:18px;">
+                  <strong>This store still uses the older single flat rate</strong>
+                  (<span data-legacy-rate-value></span>), currently applied to all three regions.
+                  Set the three rates below and save to switch to regional pricing. The old value is kept on record.
+                </div>
+              </div>
+
+              <div class="admin-rate-grid">
+                <div class="admin-field">
+                  <label for="rate-luzon">Luzon (₱)</label>
+                  <input id="rate-luzon" type="number" min="0" step="1" data-rate-luzon placeholder="150" />
+                </div>
+                <div class="admin-field">
+                  <label for="rate-visayas">Visayas (₱)</label>
+                  <input id="rate-visayas" type="number" min="0" step="1" data-rate-visayas placeholder="180" />
+                </div>
+                <div class="admin-field">
+                  <label for="rate-mindanao">Mindanao (₱)</label>
+                  <input id="rate-mindanao" type="number" min="0" step="1" data-rate-mindanao placeholder="200" />
+                </div>
+                <div class="admin-field">
+                  <label for="rate-pickup">Pickup (₱)</label>
+                  <input id="rate-pickup" type="number" min="0" step="1" data-pickup-fee placeholder="0" />
+                </div>
+              </div>
+
+              <div class="admin-field" style="margin-top:20px;max-width:320px;">
+                <label for="free-threshold">Free shipping above (₱) <span class="hint">(optional)</span></label>
+                <input id="free-threshold" type="number" min="0" step="1" data-free-threshold placeholder="Leave blank to disable" />
+                <span class="hint">When set, delivery is free once the items subtotal (before shipping) reaches this amount. Blank = always charge the regional rate.</span>
+              </div>
+
+              <div class="admin-inline-note admin-inline-note--info" style="margin-top:20px;">
+                Changing a rate only affects <strong>future</strong> orders. Every existing order keeps the exact shipping fee it was charged.
+              </div>
+            </div>
+
+            <div class="admin-sticky-actions">
+              <button type="submit" class="admin-btn" data-save-shipping>Save shipping settings</button>
+              <p class="admin-note" data-shipping-note></p>
+            </div>
+          </form>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script type="module" src="./js/settings.js"></script>
+</body>
+</html>
