@@ -12,6 +12,106 @@
   to = "/.netlify/functions/:splat"
   status = 200
 
+# Block public access to backend source and internal docs/config.
+#
+# `publish = "."` serves the ENTIRE repo root as static content. That is
+# correct for index.html/css/js/admin/**/assets/** etc., but it also meant
+# netlify/functions/**.js (this app's whole server-side source — validation
+# rules, business logic, everything) and scripts/**.js were directly
+# downloadable at e.g. /netlify/functions/create-order.js, returning the raw
+# file with HTTP 200. Found in production 2026-09-03: no credentials were
+# exposed (those come only from the FIREBASE_SERVICE_ACCOUNT_JSON env var,
+# never committed), but there was no reason for backend source or internal
+# planning docs to be public either.
+#
+# `force = true` is required on every rule below: these paths match real
+# files in the publish directory, and Netlify only consults redirects for a
+# path that does NOT already match a file unless the rule is forced. `to =
+# "/"` + `status = 404` is the standard Netlify pattern for blocking a path
+# — it returns a real 404 status, with index.html's content as the body
+# (Netlify has no dedicated 404.html here).
+#
+# Confirmed before adding these: nothing in js/**.js or admin/js/**.js
+# fetches any path outside /api/* — nav/footer render inline HTML, not
+# fetched fragments — so none of this is reachable by the live site itself.
+[[redirects]]
+  from = "/netlify/*"
+  to = "/"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/scripts/*"
+  to = "/"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/firestore.rules"
+  to = "/"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/firestore.indexes.json"
+  to = "/"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/storage.rules"
+  to = "/"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/firebase.json"
+  to = "/"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/cors.json"
+  to = "/"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/package.json"
+  to = "/"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/package-lock.json"
+  to = "/"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/FIRESTORE_SCHEMA.md"
+  to = "/"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/PHASE-5D2-QA-RUNBOOK.md"
+  to = "/"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/README.md"
+  to = "/"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/netlify.toml"
+  to = "/"
+  status = 404
+  force = true
+
 # Deliberately no custom Cache-Control headers for static CSS/JS here.
 # Filenames are stable (css/style.css, js/cart.js, ...) — nothing is
 # fingerprinted/hashed per deploy — so Netlify's own default static-asset
