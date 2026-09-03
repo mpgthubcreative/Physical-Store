@@ -93,8 +93,14 @@ function resolveShippingQuote({ deliveryMethod, destinationRegion, itemSubtotal,
   // threshold is configured AND the authoritative merchandise subtotal
   // (excluding shipping) reaches it. Otherwise the regional rate applies.
   // The threshold is null/disabled by default.
+  //
+  // The `> 0` guard is load-bearing, not defensive noise: a threshold of 0
+  // would make this condition true for EVERY order and silently zero out
+  // every regional rate. normalizeShippingSettings already converts 0 to
+  // null, and this re-checks it so a caller passing a raw settings object
+  // cannot reintroduce the bug.
   const threshold = shipping.freeShippingThreshold;
-  if (threshold !== null && threshold !== undefined && itemSubtotal >= Number(threshold)) {
+  if (threshold !== null && threshold !== undefined && Number(threshold) > 0 && itemSubtotal >= Number(threshold)) {
     return {
       shippingFee: 0,
       rateSource: 'free-shipping-threshold',

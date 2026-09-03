@@ -43,7 +43,14 @@ exports.handler = withErrorHandling(async (event) => {
   const deliveryEnabled = requireBoolean(body.deliveryEnabled, 'Delivery enabled');
   const pickupEnabled = requireBoolean(body.pickupEnabled, 'Pickup enabled');
   const pickupFee = optionalRate(body.pickupFee, 'Pickup fee') ?? 0;
-  const freeShippingThreshold = optionalRate(body.freeShippingThreshold, 'Free shipping threshold');
+
+  // Persist 0 as null. A zero threshold would mean "every order ships
+  // free", silently bypassing every regional rate — never what an Owner
+  // means by typing 0 into a "free shipping above" box. Storing null keeps
+  // the stored document unambiguous rather than relying on every reader to
+  // reinterpret 0 correctly.
+  const rawThreshold = optionalRate(body.freeShippingThreshold, 'Free shipping threshold');
+  const freeShippingThreshold = rawThreshold !== null && rawThreshold > 0 ? rawThreshold : null;
 
   const rawRates = body.rates && typeof body.rates === 'object' ? body.rates : {};
   const rates = {};

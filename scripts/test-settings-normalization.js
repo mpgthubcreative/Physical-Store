@@ -233,6 +233,34 @@ test('free shipping applies ONLY at/above a configured threshold, on merchandise
   assert.strictEqual(at.freeShippingApplied, true);
 });
 
+test('REGRESSION: a threshold of 0 means DISABLED, not "everything free"', () => {
+  // Production hit this: freeShippingThreshold:0 made `subtotal >= 0` true
+  // for every order, zeroing out all three regional rates with nothing
+  // appearing broken. 0 must normalize to null.
+  const zeroed = normalizeShippingSettings({
+    deliveryEnabled: true,
+    rates: { luzon: 150, visayas: 180, mindanao: 200 },
+    freeShippingThreshold: 0,
+  });
+  assert.strictEqual(zeroed.freeShippingThreshold, null, '0 must normalize to null (disabled)');
+  assert.strictEqual(resolveShippingQuote({ deliveryMethod: 'delivery', destinationRegion: 'luzon', itemSubtotal: 950, shipping: zeroed }).shippingFee, 150);
+  assert.strictEqual(resolveShippingQuote({ deliveryMethod: 'delivery', destinationRegion: 'visayas', itemSubtotal: 950, shipping: zeroed }).shippingFee, 180);
+  assert.strictEqual(resolveShippingQuote({ deliveryMethod: 'delivery', destinationRegion: 'mindanao', itemSubtotal: 950, shipping: zeroed }).shippingFee, 200);
+});
+
+test('REGRESSION: even a raw 0 threshold passed straight to the quote is ignored', () => {
+  // Defence in depth — a caller bypassing the normalizer must not be able
+  // to reintroduce the bug.
+  const raw = { deliveryEnabled: true, pickupEnabled: true, pickupFee: 0, rates: { luzon: 150, visayas: 180, mindanao: 200 }, freeShippingThreshold: 0 };
+  assert.strictEqual(resolveShippingQuote({ deliveryMethod: 'delivery', destinationRegion: 'luzon', itemSubtotal: 950, shipping: raw }).shippingFee, 150);
+});
+
+test('a negative threshold is also treated as disabled', () => {
+  const neg = normalizeShippingSettings({ deliveryEnabled: true, rates: { luzon: 150, visayas: 180, mindanao: 200 }, freeShippingThreshold: -100 });
+  assert.strictEqual(neg.freeShippingThreshold, null);
+  assert.strictEqual(resolveShippingQuote({ deliveryMethod: 'delivery', destinationRegion: 'luzon', itemSubtotal: 950, shipping: neg }).shippingFee, 150);
+});
+
 test('free shipping never applies to pickup', () => {
   const withThreshold = normalizeShippingSettings({ pickupEnabled: true, pickupFee: 50, freeShippingThreshold: 1 });
   assert.strictEqual(resolveShippingQuote({ deliveryMethod: 'pickup', destinationRegion: null, itemSubtotal: 9999, shipping: withThreshold }).shippingFee, 50);

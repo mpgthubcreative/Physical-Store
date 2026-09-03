@@ -102,11 +102,20 @@ function normalizeShippingSettings(raw) {
 
   const pickupFee = usableRate(data.pickupFee);
 
+  // A free-shipping threshold of 0 means "disabled", NOT "everything ships
+  // free". Treating 0 as a live threshold would make `subtotal >= 0` true
+  // for every order and silently bypass every regional rate — the whole
+  // shipping table would stop being charged with nothing appearing broken.
+  // An Owner who genuinely wants free delivery sets the regional RATES to
+  // 0; the threshold is only meaningful above zero.
+  const rawThreshold = usableRate(data.freeShippingThreshold);
+  const freeShippingThreshold = rawThreshold !== null && rawThreshold > 0 ? rawThreshold : null;
+
   return {
     deliveryEnabled: data.deliveryEnabled === true,
     pickupEnabled: data.pickupEnabled !== false, // absent defaults to enabled, matching Phase 5C
     pickupFee: pickupFee === null ? 0 : pickupFee,
-    freeShippingThreshold: usableRate(data.freeShippingThreshold),
+    freeShippingThreshold,
     rates,
     ratesSource,
     // Preserved and surfaced, never deleted — the Admin UI shows this as
