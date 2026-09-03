@@ -246,7 +246,18 @@ async function run() {
   return stats;
 }
 
-exports.handler = schedule(CRON_SCHEDULE, async () => {
+// Netlify's function bundler statically parses this call to find the cron
+// expression — it must be a literal string argument right here, NOT a
+// variable, or bundling fails outright ("Unable to find cron expression
+// for scheduled function... cannot be imported"). CRON_SCHEDULE in
+// _shared/emailProcessorConfig.js exists anyway (for the admin UI/tests to
+// reference the interval as data) — the assertion just below keeps this
+// literal from silently drifting out of sync with that constant.
+if ('*/5 * * * *' !== CRON_SCHEDULE) {
+  throw new Error(`process-email-outbox.js's inline cron literal ('*/5 * * * *') no longer matches _shared/emailProcessorConfig.js's CRON_SCHEDULE ('${CRON_SCHEDULE}') — update the literal above, it cannot import the constant.`);
+}
+
+exports.handler = schedule('*/5 * * * *', async () => {
   await run();
   return { statusCode: 200 };
 });
