@@ -34,28 +34,20 @@
  * failing the whole response — the Dashboard then simply renders without
  * the "At a glance" numbers and can fetch them separately. Payments to
  * review, orders to fulfil and the report always come back.
- *
- * ---- _timing ----
- * The response carries a small `_timing` object (stage names and
- * milliseconds only — never a token, uid, email or customer field) so
- * before/after latency can be compared from DevTools without log access.
  */
 const { admin, getDb } = require('./_shared/firebaseAdmin');
-const { requireAdminCached } = require('./_shared/adminAuth');
+const { requireAdmin } = require('./_shared/adminAuth');
 const { withErrorHandling, ok, fail } = require('./_shared/response');
-const { createTimer } = require('./_shared/timing');
 const { resolveRange } = require('./_shared/reportRange');
 const { fetchReportOrders, buildSummary, MAX_REPORT_ORDERS } = require('./_shared/reportData');
 const { fetchOrderStats, fetchCatalogStats } = require('./_shared/dashboardStats');
 
 exports.handler = withErrorHandling(async (event) => {
-  const timer = createTimer();
-
   if (event.httpMethod !== 'GET') return fail(405, 'Method not allowed.');
 
   // ONE authentication and ONE adminUsers status check for the whole
   // Dashboard, instead of three.
-  const auth = await requireAdminCached(event, timer);
+  const auth = await requireAdmin(event);
   if (!auth.ok) return fail(auth.status, auth.error);
 
   const params = event.queryStringParameters || {};
@@ -72,20 +64,18 @@ exports.handler = withErrorHandling(async (event) => {
 
   // The three reads run concurrently: total Firestore time is the slowest
   // one, not the sum.
-  const [reportResult, orderStats, catalogStats] = await timer.time('firestoreConcurrentMs', () =>
-    Promise.all([
-      fetchReportOrders(db, { startUtcMs: range.startUtcMs, endUtcMs: range.endUtcMs, includeTest }, admin),
-      fetchOrderStats(db),
-      // Lowest priority: never allowed to fail or stall the operational
-      // payload. Null here simply means the UI omits the catalog tiles.
-      skipCatalog
-        ? Promise.resolve(null)
-        : fetchCatalogStats(db).catch((err) => {
-            console.error('catalog stats failed (dashboard continues):', err.message);
-            return null;
-          }),
-    ])
-  );
+  const [reportResult, orderStats, catalogStats] = await Promise.all([
+    fetchReportOrders(db, { startUtcMs: range.startUtcMs, endUtcMs: range.endUtcMs, includeTest }, admin),
+    fetchOrderStats(db),
+    // Lowest priority: never allowed to fail or stall the operational
+    // payload. Null here simply means the UI omits the catalog tiles.
+    skipCatalog
+      ? Promise.resolve(null)
+      : fetchCatalogStats(db).catch((err) => {
+          console.error('catalog stats failed (dashboard continues):', err.message);
+          return null;
+        }),
+  ]);
 
   const { orders, truncated, testOrderCount, fetchedCount } = reportResult;
   const summary = buildSummary(orders);
@@ -115,7 +105,5 @@ exports.handler = withErrorHandling(async (event) => {
 
     // --- Priority 3: catalog, null if it failed or was skipped ---
     catalogStats,
-
-    _timing: { ...timer.summary(), authStatusCacheHit: auth.cacheHit },
   });
 });

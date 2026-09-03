@@ -19,7 +19,7 @@
  * projection in public-settings.js/get-order.js never exposes the path.
  */
 const { getDb } = require('./_shared/firebaseAdmin');
-const { requireAdminCached } = require('./_shared/adminAuth');
+const { requireAdmin } = require('./_shared/adminAuth');
 const { withErrorHandling, ok, fail } = require('./_shared/response');
 const { getShippingSettings, getPaymentSettings } = require('./_shared/settings');
 const { publicUrl } = require('./_shared/publicUrl');
@@ -62,7 +62,7 @@ function methodConfig(raw, fallback) {
 exports.handler = withErrorHandling(async (event) => {
   if (event.httpMethod !== 'GET') return fail(405, 'Method not allowed.');
 
-  const auth = await requireAdminCached(event);
+  const auth = await requireAdmin(event);
   if (!auth.ok) return fail(auth.status, auth.error);
 
   const db = getDb();
@@ -102,6 +102,5 @@ exports.handler = withErrorHandling(async (event) => {
         })),
       hasNewShape: payment.hasNewShape,
     },
-    _timing: { authStatusCacheHit: auth.cacheHit },
   });
 });

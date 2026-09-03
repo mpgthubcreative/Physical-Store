@@ -7,7 +7,7 @@
  * correctly. Never returns accessTokenHash or any raw customer token.
  */
 const { admin, getDb } = require('./_shared/firebaseAdmin');
-const { requireAdminCached } = require('./_shared/adminAuth');
+const { requireAdmin } = require('./_shared/adminAuth');
 const { withErrorHandling, ok, fail } = require('./_shared/response');
 
 const DEFAULT_LIMIT = 20;
@@ -54,7 +54,7 @@ function sanitizeOrderSummary(doc) {
 exports.handler = withErrorHandling(async (event) => {
   if (event.httpMethod !== 'GET') return fail(405, 'Method not allowed.');
 
-  const auth = await requireAdminCached(event);
+  const auth = await requireAdmin(event);
   if (!auth.ok) return fail(auth.status, auth.error);
 
   const params = event.queryStringParameters || {};
@@ -83,5 +83,5 @@ exports.handler = withErrorHandling(async (event) => {
   const orders = snap.docs.map(sanitizeOrderSummary);
   const nextCursor = snap.docs.length === limit ? encodeCursor(snap.docs[snap.docs.length - 1]) : null;
 
-  return ok({ orders, nextCursor, _timing: { authStatusCacheHit: auth.cacheHit } });
+  return ok({ orders, nextCursor });
 });

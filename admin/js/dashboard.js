@@ -453,8 +453,6 @@ async function init() {
       // Fetch them separately rather than leaving the tiles blank.
       apiFetch('/api/admin-catalog-stats').then(renderCatalogStats).catch((err) => console.error('Catalog stats failed:', err));
     }
-
-    if (data._timing) console.info('[dashboard timing]', data._timing);
   } catch (err) {
     console.error('Dashboard load failed:', err);
     reportError(err.message);
