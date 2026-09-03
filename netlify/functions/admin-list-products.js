@@ -16,7 +16,7 @@
  * Records stage names, millisecond durations, a document count, and a byte
  * count only — never product content or any customer/auth data.
  */
-const { requireAdmin } = require('./_shared/adminAuth');
+const { requireAdminCached } = require('./_shared/adminAuth');
 const { getDb } = require('./_shared/firebaseAdmin');
 const { withErrorHandling, ok, fail } = require('./_shared/response');
 const { publicUrl } = require('./_shared/publicUrl');
@@ -25,7 +25,10 @@ const { createTimer } = require('./_shared/timing');
 exports.handler = withErrorHandling(async (event) => {
   const timer = createTimer();
 
-  const auth = await requireAdmin(event, timer);
+  // Read-only endpoint — uses the short-lived admin-status cache (see
+  // _shared/adminAuth.js). verifyIdToken() still runs on every call; only
+  // the adminUsers/{uid} status read may be served from cache.
+  const auth = await requireAdminCached(event, timer);
   if (!auth.ok) return fail(auth.status, auth.error);
 
   const db = getDb();
@@ -63,6 +66,7 @@ exports.handler = withErrorHandling(async (event) => {
     products,
     _timing: {
       ...timer.summary(),
+      authStatusCacheHit: auth.cacheHit,
       productDocsRead: snap.size,
       responseBytes,
     },

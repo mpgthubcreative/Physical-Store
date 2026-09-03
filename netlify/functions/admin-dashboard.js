@@ -41,7 +41,7 @@
  * before/after latency can be compared from DevTools without log access.
  */
 const { admin, getDb } = require('./_shared/firebaseAdmin');
-const { requireAdmin } = require('./_shared/adminAuth');
+const { requireAdminCached } = require('./_shared/adminAuth');
 const { withErrorHandling, ok, fail } = require('./_shared/response');
 const { createTimer } = require('./_shared/timing');
 const { resolveRange } = require('./_shared/reportRange');
@@ -55,7 +55,7 @@ exports.handler = withErrorHandling(async (event) => {
 
   // ONE authentication and ONE adminUsers status check for the whole
   // Dashboard, instead of three.
-  const auth = await requireAdmin(event, timer);
+  const auth = await requireAdminCached(event, timer);
   if (!auth.ok) return fail(auth.status, auth.error);
 
   const params = event.queryStringParameters || {};
@@ -116,6 +116,6 @@ exports.handler = withErrorHandling(async (event) => {
     // --- Priority 3: catalog, null if it failed or was skipped ---
     catalogStats,
 
-    _timing: timer.summary(),
+    _timing: { ...timer.summary(), authStatusCacheHit: auth.cacheHit },
   });
 });

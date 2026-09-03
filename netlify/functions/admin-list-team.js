@@ -16,13 +16,13 @@
  * drift so it never has to be diagnosed via decoded JWTs again.
  */
 const { getDb, getAdminAuth } = require('./_shared/firebaseAdmin');
-const { requireOwner } = require('./_shared/adminAuth');
+const { requireOwnerCached } = require('./_shared/adminAuth');
 const { withErrorHandling, ok, fail } = require('./_shared/response');
 
 exports.handler = withErrorHandling(async (event) => {
   if (event.httpMethod !== 'GET') return fail(405, 'Method not allowed.');
 
-  const auth = await requireOwner(event);
+  const auth = await requireOwnerCached(event);
   if (!auth.ok) return fail(auth.status, auth.error);
 
   const db = getDb();
@@ -58,5 +58,5 @@ exports.handler = withErrorHandling(async (event) => {
     return (a.email || '').localeCompare(b.email || '');
   });
 
-  return ok({ members });
+  return ok({ members, _timing: { authStatusCacheHit: auth.cacheHit } });
 });

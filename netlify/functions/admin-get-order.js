@@ -9,7 +9,7 @@
  * saw at order time.
  */
 const { getDb } = require('./_shared/firebaseAdmin');
-const { requireAdmin } = require('./_shared/adminAuth');
+const { requireAdminCached } = require('./_shared/adminAuth');
 const { withErrorHandling, ok, fail } = require('./_shared/response');
 const { requireString } = require('./_shared/validation');
 const { publicUrl } = require('./_shared/publicUrl');
@@ -31,7 +31,7 @@ function withResolvedImages(item) {
 exports.handler = withErrorHandling(async (event) => {
   if (event.httpMethod !== 'GET') return fail(405, 'Method not allowed.');
 
-  const auth = await requireAdmin(event);
+  const auth = await requireAdminCached(event);
   if (!auth.ok) return fail(auth.status, auth.error);
 
   const params = event.queryStringParameters || {};
@@ -79,5 +79,6 @@ exports.handler = withErrorHandling(async (event) => {
       createdAt: order.createdAt || null,
       updatedAt: order.updatedAt || null,
     },
+    _timing: { authStatusCacheHit: auth.cacheHit },
   });
 });

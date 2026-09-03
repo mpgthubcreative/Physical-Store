@@ -24,7 +24,7 @@
  * single-field index. No composite index is required by this endpoint.
  */
 const { admin, getDb } = require('./_shared/firebaseAdmin');
-const { requireAdmin } = require('./_shared/adminAuth');
+const { requireAdminCached } = require('./_shared/adminAuth');
 const { withErrorHandling, ok, fail } = require('./_shared/response');
 const { createTimer } = require('./_shared/timing');
 const { resolveRange } = require('./_shared/reportRange');
@@ -35,7 +35,7 @@ exports.handler = withErrorHandling(async (event) => {
 
   if (event.httpMethod !== 'GET') return fail(405, 'Method not allowed.');
 
-  const auth = await requireAdmin(event, timer);
+  const auth = await requireAdminCached(event, timer);
   if (!auth.ok) return fail(auth.status, auth.error);
 
   const params = event.queryStringParameters || {};
@@ -78,6 +78,6 @@ exports.handler = withErrorHandling(async (event) => {
       truncated,
       maxOrders: MAX_REPORT_ORDERS,
     },
-    _timing: timer.summary(),
+    _timing: { ...timer.summary(), authStatusCacheHit: auth.cacheHit },
   });
 });
