@@ -1,4 +1,21 @@
 /*
+ * ============================================================================
+ * DEPRECATED — DO NOT USE FOR THE TRANSPORT DECISION. See
+ * admin-benchmark-firestore-grpc.js and admin-benchmark-firestore-rest.js
+ * instead.
+ *
+ * This endpoint always runs gRPC first and REST second, in the SAME
+ * invocation. A production cold measurement showed gRPC's first read at
+ * 2382ms and REST's first read (run immediately after, same warm process)
+ * at 1511ms — an 871ms gap that is NOT proof REST is faster, because REST
+ * benefited from running second: DNS/network init, TLS setup, and general
+ * runtime warming from the gRPC call moments before could explain some or
+ * all of that gap on their own. Left in place only until the transport
+ * decision is finalized (see the two replacement endpoints below), at
+ * which point this file, its ordering bias, and the fair replacements are
+ * all removed together.
+ * ============================================================================
+ *
  * GET /api/admin-benchmark-firestore-transport
  *
  * TEMPORARY DIAGNOSTIC ENDPOINT — not part of the app's real surface. Exists

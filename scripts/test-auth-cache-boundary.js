@@ -69,7 +69,9 @@ const MUST_STAY_FRESH = new Set([
   'admin-finalize-image-upload.js',
   'admin-remove-image.js',
   'admin-report-export.js', // judgment call: infrequent, exports order data — left fresh
-  'admin-benchmark-firestore-transport.js', // temporary diagnostic tool — deliberately the strictest check, not the cache
+  'admin-benchmark-firestore-transport.js', // temporary diagnostic tool — deliberately the strictest check, not the cache (deprecated, pending removal)
+  'admin-benchmark-firestore-grpc.js', // temporary diagnostic tool — fair transport comparison, half A
+  'admin-benchmark-firestore-rest.js', // temporary diagnostic tool — fair transport comparison, half B (does not call requireAdmin/requireAdminCached at all — verifies inline via the isolated REST client, so it matches neither auth-helper regex; listed here for completeness and caught by the exhaustive-classification test below via its own file existence)
   'owner-create-admin.js',
   'owner-disable-admin.js',
   'owner-reactivate-admin.js',

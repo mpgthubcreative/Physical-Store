@@ -268,4 +268,11 @@ module.exports = {
     requireOwnerCached,
     ADMIN_STATUS_CACHE_TTL_MS,
     _clearAdminStatusCacheForTests,
+    // Exported for admin-benchmark-firestore-rest.js, which must verify the
+    // token WITHOUT touching the default (gRPC) Firestore client at all —
+    // reusing requireAdmin() there would make a gRPC call before the
+    // REST-only measurement even starts. Everything else about token
+    // extraction is identical to the checks above; this just avoids a
+    // second, drifting implementation of the same three lines.
+    extractBearerToken,
 };
