@@ -64,7 +64,7 @@ function renderRows() {
     .map(
       (c) => `
     <tr>
-      <td data-role="media">${c.imageUrl ? `<img class="admin-thumb" src="${c.imageUrl}" alt="" />` : `<span class="admin-thumb"></span>`}</td>
+      <td data-role="media">${c.imageUrl ? `<img class="admin-thumb" src="${c.imageUrl}" alt="" loading="lazy" decoding="async" width="42" height="42" />` : `<span class="admin-thumb"></span>`}</td>
       <td data-role="heading"><span class="admin-row-title">${escapeHtml(c.name)}</span>${c.featured ? ' <span class="admin-badge admin-badge--info">Featured</span>' : ''}</td>
       <td data-role="meta" data-label="Slug">${escapeHtml(c.slug)}</td>
       <td data-role="meta" data-label="Status"><span class="admin-badge ${c.active ? 'admin-badge--active' : 'admin-badge--inactive'}">${c.active ? 'Active' : 'Archived'}</span></td>

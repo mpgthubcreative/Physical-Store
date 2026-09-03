@@ -162,19 +162,10 @@
         </div>
       </div>
 
-      <div class="admin-section-head">
-        <h2>Recent orders</h2>
-      </div>
-      <div class="admin-table-wrap">
-        <table class="admin-table">
-          <thead>
-            <tr><th>Order #</th><th>Customer</th><th>Destination</th><th>Total</th><th>Payment</th><th>Fulfillment</th><th>Date</th><th></th></tr>
-          </thead>
-          <tbody data-recent-orders>
-            <tr><td colspan="8" class="admin-empty">Loading…</td></tr>
-          </tbody>
-        </table>
-      </div>
+      <!-- The "Recent orders" table that used to sit here was removed in the
+           Phase 5D.3 performance pass: the Reports section above already
+           lists orders for the selected range, so this was a second
+           /api/admin-list-orders round trip rendering duplicate rows. -->
 
       <div class="admin-section-head">
         <h2>Inventory attention</h2>

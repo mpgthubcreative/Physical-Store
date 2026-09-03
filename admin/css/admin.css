@@ -96,6 +96,26 @@ body { background: var(--panel); }
 }
 .admin-signout-btn:hover { border-color: var(--coral); color: var(--coral); }
 
+/* Shell skeleton.
+   The sidebar is injected by JS after auth resolves, so #admin-sidebar is
+   an empty div on first paint. Without this, the page paints with the main
+   column at full width and then everything jumps sideways once the sidebar
+   appears. Reserving the exact sidebar width up front means the layout is
+   correct from the very first frame and only the sidebar's CONTENT fills
+   in — no layout shift, and the Owner sees the app frame immediately
+   instead of a blank page. */
+#admin-sidebar:empty {
+  width: var(--admin-sidebar-w);
+  flex: none;
+  background: var(--white);
+  border-right: 1px solid var(--border);
+}
+@media (max-width: 899px) {
+  /* On mobile the sidebar is an off-canvas drawer, so it occupies no
+     layout space and there is nothing to reserve. */
+  #admin-sidebar:empty { display: none; }
+}
+
 .admin-scrim { display: none; }
 
 /* Mobile topbar (hamburger + page title) — hidden on desktop */

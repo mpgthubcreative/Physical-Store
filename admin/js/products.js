@@ -231,7 +231,7 @@ function renderRows() {
     .map(
       (p) => `
     <tr>
-      <td data-role="media">${p.thumbnailUrl ? `<img class="admin-thumb" src="${p.thumbnailUrl}" alt="" />` : `<span class="admin-thumb"></span>`}</td>
+      <td data-role="media">${p.thumbnailUrl ? `<img class="admin-thumb" src="${p.thumbnailUrl}" alt="" loading="lazy" decoding="async" width="42" height="42" />` : `<span class="admin-thumb"></span>`}</td>
       <td data-role="heading"><span class="admin-row-title">${escapeHtml(p.title)}</span>${p.featured ? ' <span class="admin-badge admin-badge--info">Featured</span>' : ''}</td>
       <td data-role="meta" data-label="Price">₱${p.basePrice}</td>
       <td data-role="meta" data-label="Variants">${p.variantCount}</td>

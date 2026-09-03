@@ -81,7 +81,7 @@ function renderRows() {
     .map(
       (p) => `
     <tr>
-      <td data-role="media">${p.imageUrl ? `<img class="admin-thumb" src="${p.imageUrl}" alt="" />` : `<span class="admin-thumb" style="background:${p.hex};"></span>`}</td>
+      <td data-role="media">${p.imageUrl ? `<img class="admin-thumb" src="${p.imageUrl}" alt="" loading="lazy" decoding="async" width="42" height="42" />` : `<span class="admin-thumb" style="background:${p.hex};"></span>`}</td>
       <td data-role="heading"><span class="admin-row-title">${escapeHtml(p.name)}</span></td>
       <td data-role="meta" data-label="Price">₱${p.price}</td>
       <td data-role="meta" data-label="Stock">${p.stockQty ?? 0}</td>

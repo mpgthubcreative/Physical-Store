@@ -53,7 +53,7 @@ export async function renderAdminShell(activeKey) {
   sidebarMount.innerHTML = `
     <aside class="admin-sidebar" data-admin-sidebar>
       <div class="admin-sidebar__brand">
-        <img src="../assets/buddy-logo.jpg" alt="" />
+        <img src="../assets/buddy-logo.jpg" alt="" width="30" height="30" decoding="async" />
         <span>Buddy Admin</span>
       </div>
       <nav class="admin-sidebar__nav">

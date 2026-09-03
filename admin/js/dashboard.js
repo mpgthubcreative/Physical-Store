@@ -1,6 +1,6 @@
 import { requireSession, apiFetch, getIdToken } from './admin-auth.js';
 import { renderAdminShell } from './admin-shell.js';
-import { PAYMENT_STATUS, FULFILLMENT_STATUS, statusBadge, destinationShort, fmtMoney, fmtDate, escapeHtml } from './admin-format.js';
+import { PAYMENT_STATUS, FULFILLMENT_STATUS, statusBadge, destinationShort, fmtMoney, escapeHtml } from './admin-format.js';
 import { showToast, setButtonBusy } from './admin-ui.js';
 
 /*
@@ -230,7 +230,9 @@ async function loadReport() {
  * report used, so the export can never describe a different dataset.
  */
 async function downloadExport(format, btn) {
-  setButtonBusy(btn, true, 'Preparing…');
+  // Exports are generated on demand only — never pre-generated on dashboard
+  // load — so this is where the Owner waits, and it must say so.
+  setButtonBusy(btn, true, 'Generating report…');
   try {
     const token = await getIdToken();
     const res = await fetch(`/api/admin-report-export?format=${format}&` + reportQuery(), {
@@ -351,9 +353,10 @@ function setKpi(selector, value) {
   el.classList.remove('is-loading');
 }
 
-function renderAttention({ lowStockProducts }) {
+function renderAttention({ lowStockProducts, total }) {
   const card = $('[data-attention-card]');
-  if (!lowStockProducts.length) {
+  const count = total ?? lowStockProducts.length;
+  if (!count) {
     card.innerHTML = `
       <div class="admin-empty-state" style="padding:20px 0;">
         <div class="admin-empty-state__title">Stock looks fine</div>
@@ -361,84 +364,75 @@ function renderAttention({ lowStockProducts }) {
       </div>`;
     return;
   }
+  // The endpoint caps how many titles it returns; say so rather than
+  // implying the named ones are the complete list.
+  const names = lowStockProducts.map((p) => escapeHtml(p.title)).join(', ');
+  const more = count > lowStockProducts.length ? ` and ${count - lowStockProducts.length} more` : '';
   card.innerHTML = `<div class="admin-timeline">
     <div class="admin-timeline-item">
-      <div class="admin-timeline-item__action">${lowStockProducts.length} product${lowStockProducts.length === 1 ? ' is' : 's are'} out of stock</div>
-      <div class="admin-timeline-item__meta">${lowStockProducts.map((p) => escapeHtml(p.title)).join(', ')}</div>
+      <div class="admin-timeline-item__action">${count} product${count === 1 ? ' is' : 's are'} out of stock</div>
+      <div class="admin-timeline-item__meta">${names}${more}</div>
     </div>
   </div>`;
-}
-
-function renderRecentOrders(orders) {
-  const tbody = $('[data-recent-orders]');
-  if (!orders.length) {
-    tbody.innerHTML = '<tr><td colspan="8" class="admin-empty">No orders yet.</td></tr>';
-    return;
-  }
-  tbody.innerHTML = orders
-    .map(
-      (o) => `
-    <tr>
-      <td data-role="heading"><span class="admin-row-title">${escapeHtml(o.orderNumber)}</span>${o.isTest ? ' <span class="admin-badge admin-badge--neutral">TEST</span>' : ''}</td>
-      <td data-role="meta" data-label="Customer">${escapeHtml(o.customerName)}</td>
-      <td data-role="meta" data-label="Destination">${destinationShort(o)}</td>
-      <td data-role="meta" data-label="Total">${fmtMoney(o.total)}</td>
-      <td data-role="meta" data-label="Payment">${statusBadge(PAYMENT_STATUS, o.paymentStatus)}</td>
-      <td data-role="meta" data-label="Fulfillment">${statusBadge(FULFILLMENT_STATUS, o.fulfillmentStatus)}</td>
-      <td data-role="meta" data-label="Date">${fmtDate(o.createdAt)}</td>
-      <td data-role="actions"><a class="admin-btn admin-btn--ghost admin-btn--small" href="order-detail.html?id=${encodeURIComponent(o.orderId)}">View</a></td>
-    </tr>`
-    )
-    .join('');
 }
 
 /* ---------------------------------------------------------------------
    Boot
 --------------------------------------------------------------------- */
 
+/*
+ * The Dashboard makes exactly THREE API calls, all issued in parallel:
+ *
+ *   /api/admin-report        — the date-filtered reporting section
+ *   /api/admin-order-stats   — the live operational queues (count() only)
+ *   /api/admin-catalog-stats — the "At a glance" numbers (count() + a
+ *                              projected products read)
+ *
+ * It deliberately does NOT call admin-list-products / admin-list-patches /
+ * admin-list-collections. Those are CATALOG EDITOR endpoints that read
+ * whole collections and return full records; the Dashboard only ever needed
+ * counts from them. It also no longer calls admin-list-orders — the report
+ * table below already lists orders for the selected range, so a second
+ * "recent orders" table was one extra round trip for duplicate information.
+ *
+ * Nothing is awaited sequentially: a slow catalog read can no longer delay
+ * the operational queues, and vice versa. Each section renders as soon as
+ * its own request lands.
+ */
 async function init() {
   await requireSession();
   await renderAdminShell('dashboard');
 
   initReportControls();
 
-  // The report is the primary content, so it loads first and independently
-  // of the slower catalog aggregate calls below.
+  // Fire all three immediately, render each independently. No await chain,
+  // so the three round trips overlap instead of stacking.
   loadReport();
 
-  try {
-    const orderStats = await apiFetch('/api/admin-order-stats');
-    renderOperationalQueues({
-      pendingReviewCount: orderStats.pendingReviewCount,
-      paidUnfulfilledCount: orderStats.paidUnfulfilledCount ?? orderStats.paidAwaitingProcessingCount,
+  apiFetch('/api/admin-order-stats')
+    .then((orderStats) => {
+      renderOperationalQueues({
+        pendingReviewCount: orderStats.pendingReviewCount,
+        paidUnfulfilledCount: orderStats.paidUnfulfilledCount ?? orderStats.paidAwaitingProcessingCount,
+      });
+      setKpi('[data-count-total-orders]', orderStats.totalOrdersCount);
+    })
+    .catch((err) => {
+      console.error('Order stats failed:', err);
+      $('[data-operational-queues]').innerHTML =
+        '<div class="admin-inline-note admin-inline-note--danger">Could not load the operational queues. Refresh to try again.</div>';
     });
-    setKpi('[data-count-total-orders]', orderStats.totalOrdersCount);
-  } catch (err) {
-    console.error('Order stats failed:', err);
-  }
 
-  try {
-    const [{ products }, { patches }, { collections }, { orders: recentOrders }] = await Promise.all([
-      apiFetch('/api/admin-list-products'),
-      apiFetch('/api/admin-list-patches'),
-      apiFetch('/api/admin-list-collections'),
-      apiFetch('/api/admin-list-orders?limit=5'),
-    ]);
-
-    const activeProducts = products.filter((p) => p.active);
-    setKpi('[data-count-products]', activeProducts.length);
-    document.querySelector('[data-count-products-sub]').textContent = `${products.length} total`;
-    setKpi('[data-count-patches]', patches.length);
-    setKpi('[data-count-collections]', collections.length);
-
-    const lowStockProducts = products.filter((p) => p.active && p.totalStock === 0);
-    setKpi('[data-count-lowstock]', lowStockProducts.length);
-
-    renderRecentOrders(recentOrders);
-    renderAttention({ lowStockProducts });
-  } catch (err) {
-    console.error('Catalog summary failed:', err);
-  }
+  apiFetch('/api/admin-catalog-stats')
+    .then((stats) => {
+      setKpi('[data-count-products]', stats.productsActive);
+      document.querySelector('[data-count-products-sub]').textContent = `${stats.productsTotal} total`;
+      setKpi('[data-count-patches]', stats.patches);
+      setKpi('[data-count-collections]', stats.collections);
+      setKpi('[data-count-lowstock]', stats.outOfStockCount);
+      renderAttention({ lowStockProducts: stats.outOfStock, total: stats.outOfStockCount });
+    })
+    .catch((err) => console.error('Catalog stats failed:', err));
 }
 
 init();
