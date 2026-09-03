@@ -215,10 +215,14 @@
                 </div>
               </div>
 
-              <div class="admin-field" style="margin-top:20px;max-width:320px;">
-                <label for="free-threshold">Free shipping above (₱) <span class="hint">(optional)</span></label>
-                <input id="free-threshold" type="number" min="0" step="1" data-free-threshold placeholder="Leave blank to disable" />
-                <span class="hint">When set, delivery is free once the items subtotal (before shipping) reaches this amount. Blank = always charge the regional rate.</span>
+              <div class="admin-field" style="margin-top:20px;max-width:360px;">
+                <label for="free-threshold">Free shipping minimum order (₱) <span class="hint">(optional)</span></label>
+                <input id="free-threshold" type="number" min="1" step="1" data-free-threshold placeholder="Leave blank to disable" />
+                <span class="hint">
+                  <strong>Leave blank to disable.</strong> When set, delivery becomes free once the items subtotal
+                  (before shipping) reaches this amount. Entering <strong>0</strong> also means disabled &mdash; it will
+                  <em>not</em> make every order ship free. To offer free delivery, set the regional rates to 0 instead.
+                </span>
               </div>
 
               <div class="admin-inline-note admin-inline-note--info" style="margin-top:20px;">

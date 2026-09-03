@@ -203,14 +203,23 @@ body { background: var(--panel); }
 .admin-section-head p { margin: 0; font: 500 13px var(--font-body); color: var(--ink-muted); }
 
 .admin-kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 24px; }
+/* Below ~430px two 180px tracks plus the gap no longer leave room for a
+   long peso figure, and the card content pushes the grid wider than the
+   page. Drop to a single column before that happens. */
+@media (max-width: 460px) {
+  .admin-kpi-grid { grid-template-columns: 1fr; }
+}
 .admin-kpi {
   background: var(--white); border: 1px solid var(--border); border-radius: var(--admin-radius-card);
   padding: 18px 20px; display: flex; flex-direction: column; gap: 6px;
+  /* Lets the card shrink below its content's intrinsic width instead of
+     forcing the grid track wider than the viewport. */
+  min-width: 0;
 }
 .admin-kpi__top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .admin-kpi__label { font: 700 12.5px var(--font-body); color: var(--ink-muted); }
 .admin-kpi__icon { width: 30px; height: 30px; border-radius: 9px; background: var(--panel); color: var(--teal); display: flex; align-items: center; justify-content: center; flex: none; }
-.admin-kpi__value { font: 700 30px var(--font-heading); color: var(--ink); line-height: 1.1; }
+.admin-kpi__value { font: 700 30px var(--font-heading); color: var(--ink); line-height: 1.1; overflow-wrap: anywhere; }
 .admin-kpi__sub { font: 600 12px var(--font-body); color: var(--ink-faint); }
 .admin-kpi__value.is-loading { color: var(--ink-faint); }
 
@@ -227,8 +236,12 @@ body { background: var(--panel); }
 .admin-table td.wrap { white-space: normal; }
 .admin-table td.admin-td--actions { white-space: nowrap; }
 .admin-thumb { width: 42px; height: 42px; border-radius: 9px; background: var(--panel); object-fit: cover; display: block; }
-.admin-row-title { font: 700 14px var(--font-body); color: var(--ink); }
-.admin-row-sub { font: 500 12.5px var(--font-body); color: var(--ink-faint); margin-top: 2px; }
+/* Customer emails and addresses are long unbroken strings with no space to
+   wrap at. Without `anywhere`, one long address pushes the whole page wider
+   than the viewport at mobile widths — the row itself looks fine, but the
+   PAGE gains a horizontal scrollbar. */
+.admin-row-title { font: 700 14px var(--font-body); color: var(--ink); overflow-wrap: anywhere; }
+.admin-row-sub { font: 500 12.5px var(--font-body); color: var(--ink-faint); margin-top: 2px; overflow-wrap: anywhere; }
 
 @media (max-width: 720px) {
   .admin-table-wrap { overflow-x: visible; border: none; background: none; }
@@ -241,7 +254,11 @@ body { background: var(--panel); }
     margin-bottom: 12px; padding: 14px; box-shadow: var(--admin-shadow-sm); gap: 0 10px;
   }
   .admin-table tbody tr:hover { background: var(--white); }
-  .admin-table td { border-bottom: none; padding: 3px 0; white-space: normal; }
+  /* min-width:0 lets a flex/grid child shrink below its content width —
+     without it a long email keeps the cell at its intrinsic width and the
+     whole page overflows. overflow-wrap gives the text somewhere to break. */
+  .admin-table td { border-bottom: none; padding: 3px 0; white-space: normal; min-width: 0; overflow-wrap: anywhere; }
+  .admin-table td > div { min-width: 0; }
   .admin-table td[data-role="media"] { flex: 0 0 auto; padding-right: 2px; }
   .admin-table td[data-role="heading"] { flex: 1 1 auto; min-width: 0; }
   .admin-table td[data-role="meta"] {
@@ -337,6 +354,11 @@ body { background: var(--panel); }
   border: 1.5px dashed var(--border); border-radius: var(--admin-radius-sm); padding: 16px;
   display: flex; align-items: center; gap: 14px; flex-wrap: wrap; background: var(--panel);
 }
+/* A file input has a wide intrinsic size that ignores its flex container,
+   so it must be explicitly capped or it pushes the page wider on narrow
+   screens. */
+.admin-image-drop > div { min-width: 0; }
+.admin-image-drop input[type="file"] { max-width: 100%; font-size: 13px; }
 .admin-image-hint { font: 500 12px var(--font-body); color: var(--ink-faint); }
 
 /* ---------------------------------------------------------------------

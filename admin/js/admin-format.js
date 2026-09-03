@@ -68,8 +68,23 @@ export function tone(map, key) {
   return (map[key] || {}).tone || 'neutral';
 }
 
+/**
+ * Peso formatting.
+ *
+ * This used to be `toLocaleString('en-PH') + '.00'`, which only worked
+ * because every value was a whole number: order totals, subtotals and
+ * shipping fees are all integers. Phase 5D.3 introduced the first
+ * FRACTIONAL money value — average paid order value — and the old version
+ * rendered it as "₱11,455.125.00", appending .00 to a number that already
+ * had decimals. It also disagreed with the Excel/PDF exports, which format
+ * to exactly two decimals, so the same figure printed differently in the
+ * dashboard and in the report generated from it.
+ *
+ * Formatting the fraction digits properly fixes both, and is unchanged for
+ * the integer values everywhere else (1130 -> "₱1,130.00").
+ */
 export function fmtMoney(n) {
-  return '₱' + Number(n || 0).toLocaleString('en-PH') + '.00';
+  return '₱' + Number(n || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 export function fmtDate(v) {
