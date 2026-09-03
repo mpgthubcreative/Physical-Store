@@ -11,6 +11,39 @@ let patches = [];
 let editingId = null;
 let editingProduct = null; // full detail record while the form is open, for image gating/removal
 
+/*
+ * Editor support data (collections + patches) is fetched ONLY when the
+ * Owner actually opens the editor — New Product or Edit — never on initial
+ * page load.
+ *
+ * Before this, init() awaited admin-list-collections + admin-list-patches
+ * (in parallel with each other, but BEFORE admin-list-products even
+ * started) on every visit to this page, whether or not the Owner ever
+ * opened the editor. That is two extra authenticated round trips paid by
+ * every "just glance at the products list" visit, and it made the list —
+ * which itself is a single lightweight, already-optimized request — take
+ * as long as three sequential ones.
+ *
+ * Memoizing the in-flight promise means the FIRST Edit/New click pays for
+ * this fetch, and every click after that (in the same page load) is
+ * instant, since `collections`/`patches` are already populated.
+ */
+let editorSupportDataPromise = null;
+function ensureEditorSupportData() {
+  if (!editorSupportDataPromise) {
+    editorSupportDataPromise = Promise.all([apiFetch('/api/admin-list-collections'), apiFetch('/api/admin-list-patches')])
+      .then(([{ collections: c }, { patches: p }]) => {
+        collections = c;
+        patches = p;
+      })
+      .catch((err) => {
+        editorSupportDataPromise = null; // allow a retry on the next click rather than caching a failure forever
+        throw err;
+      });
+  }
+  return editorSupportDataPromise;
+}
+
 const form = document.querySelector('[data-product-form]');
 const formCard = document.querySelector('[data-product-form-card]');
 const formNote = document.querySelector('[data-product-form-note]');
@@ -258,7 +291,21 @@ async function loadProducts() {
   renderRows();
 }
 
-document.querySelector('[data-new-product]').addEventListener('click', () => openForm(null));
+const newProductBtn = document.querySelector('[data-new-product]');
+newProductBtn.addEventListener('click', async () => {
+  // Editor support data (collections/patches) is fetched here, on demand —
+  // never on page load. Memoized, so this only costs anything on the first
+  // click.
+  setButtonBusy(newProductBtn, true, 'Loading…');
+  try {
+    await ensureEditorSupportData();
+    openForm(null);
+  } catch (err) {
+    showToast(err.message || 'Could not load editor data.', 'error');
+  } finally {
+    setButtonBusy(newProductBtn, false);
+  }
+});
 document.querySelector('[data-cancel-form]').addEventListener('click', closeForm);
 document.querySelector('[data-add-variant]').addEventListener('click', () => addVariantRow(null));
 
@@ -269,8 +316,21 @@ document.querySelector('[data-product-rows]').addEventListener('click', async (e
   const deleteBtn = e.target.closest('[data-delete]');
 
   if (editBtn) {
-    const { product } = await apiFetch('/api/admin-get-product?id=' + encodeURIComponent(editBtn.dataset.edit));
-    openForm(product);
+    setButtonBusy(editBtn, true, 'Loading…');
+    try {
+      // The product itself and the editor support data are fetched
+      // CONCURRENTLY — neither waits on the other — so opening the editor
+      // costs max(getProduct, supportData), not their sum.
+      const [{ product }] = await Promise.all([
+        apiFetch('/api/admin-get-product?id=' + encodeURIComponent(editBtn.dataset.edit)),
+        ensureEditorSupportData(),
+      ]);
+      openForm(product);
+    } catch (err) {
+      showToast(err.message || 'Could not load this product.', 'error');
+    } finally {
+      setButtonBusy(editBtn, false);
+    }
   } else if (archiveBtn) {
     await apiFetch('/api/admin-archive-product', { method: 'POST', body: JSON.stringify({ id: archiveBtn.dataset.archive }) });
     showToast('Product archived.', 'success');
@@ -393,15 +453,16 @@ removeThumbnailBtn.addEventListener('click', async () => {
   await loadProducts();
 });
 
+/*
+ * Products list becomes usable from exactly ONE API call
+ * (admin-list-products), matching every other operational page. Editor
+ * support data (collections/patches) is no longer part of initial load —
+ * see ensureEditorSupportData() above, called only from the New/Edit
+ * button handlers.
+ */
 async function init() {
   await requireSession();
   claims = await renderAdminShell('products');
-  const [{ collections: c }, { patches: p }] = await Promise.all([
-    apiFetch('/api/admin-list-collections'),
-    apiFetch('/api/admin-list-patches'),
-  ]);
-  collections = c;
-  patches = p;
   await loadProducts();
 }
 
